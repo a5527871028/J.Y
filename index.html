@@ -1,1060 +1,1163 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九翊美學 × J.Y Beauty Studio</title>
+    <title>九翊美學 × J.Y Beauty Studio - 線上小卡</title>
     <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 載入 Lucide Icons (鈴鐺、IG、LINE等圖示) -->
+    <!-- 載入 Lucide Icons (用於社群和管理員圖示) -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    
     <style>
-        /* 使用 Inter 字體 */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        
+        /* 設定 Inter 字體 */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #fce7f3; /* 淺粉色背景 */
-            /* 聖誕主題背景圖案：使用線性漸變和重複放射性漸變模擬溫暖雪花 */
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.5) 1px, transparent 1px),
-                radial-gradient(circle at 60% 80%, rgba(255, 255, 255, 0.5) 1px, transparent 1px),
-                radial-gradient(circle at 80% 40%, rgba(255, 255, 255, 0.5) 0.5px, transparent 0.5px),
-                linear-gradient(180deg, #fff7ed 0%, #fce7f3 100%);
-            background-repeat: repeat, repeat, repeat, no-repeat;
-            background-size: 100% 100%, 100% 100%, 100% 100%, cover;
+            /* 暖色背景，帶有微小的聖誕氛圍 */
+            background-color: #ffeaea; /* Light warm pink/red */
+            background-image: radial-gradient(circle at 100% 100%, #ffdfdf, #ffeaea 50%);
             min-height: 100vh;
         }
 
-        .card-container {
-            max-width: 768px;
-        }
-
-        /* 自定義按鈕風格 */
-        .btn-primary {
-            @apply bg-[#f06292] text-white hover:bg-[#e91e63] font-semibold py-2 px-4 rounded-xl shadow-lg transition duration-300;
-        }
-
-        /* 項目列表風格 */
-        .list-item {
-            @apply flex items-start space-x-2 py-2 border-b border-pink-100;
-        }
-        .list-icon {
-            @apply text-pink-600 flex-shrink-0 mt-1;
-        }
-
-        /* 價目表表格樣式 */
-        .price-table {
-            @apply w-full text-sm text-gray-700;
-        }
-        .price-table th, .price-table td {
-            @apply px-2 py-2 text-center border-b border-pink-200;
-        }
-        .price-table th {
-            @apply bg-pink-100 font-bold text-pink-700 text-base;
-        }
-        .price-table tr:last-child td {
-            @apply border-b-0;
+        /* 主容器樣式 */
+        #app-container {
+            border: 4px solid #b91c1c; /* Deep red border */
         }
         
-        .tab-button {
-            @apply text-sm sm:text-base font-medium py-3 px-3 sm:px-4 text-gray-600 transition duration-300 whitespace-nowrap rounded-t-xl hover:bg-white hover:text-pink-600;
-        }
-        .tab-button.active {
-            @apply bg-white text-pink-700 shadow-inner shadow-pink-100;
+        /* 隱藏原生單選按鈕 (用於分頁切換) */
+        .tab-input {
+            display: none;
         }
 
-        /* 隱藏密碼輸入的實際文字 */
-        .password-input {
-            -webkit-text-security: disc;
-            text-security: disc;
+        /* 根據選中的單選按鈕顯示對應的內容 */
+        .tab-content {
+            display: none;
         }
-        
-        /* 管理員介面區塊標題 */
-        .admin-section-title {
-            @apply text-lg font-bold text-pink-700 border-l-4 border-pink-500 pl-3 mb-4 mt-6;
+
+        /* 選中的標籤樣式 */
+        .tab-input:checked + .tab-label {
+            background-color: #b91c1c; /* Deep Red */
+            color: #fff; /* White Text */
+            border-bottom: 2px solid #fcd34d; /* Gold line */
+        }
+
+        /* 內容區塊在選中時顯示 */
+        #tab-rules:checked ~ .content-rules,
+        #tab-price:checked ~ .content-price,
+        #tab-qa:checked ~ .content-qa,
+        #tab-promo:checked ~ .content-promo,
+        #tab-form:checked ~ .content-form,
+        #tab-admin:checked ~ .content-admin {
+            display: block;
+        }
+
+        /* 管理員介面專屬標籤，只有登入後顯示 */
+        .admin-tab-item {
+            display: none;
+        }
+        .is-admin .admin-tab-item {
+            display: block;
+        }
+
+        /* Q&A 區塊的排版 */
+        .qa-block {
+            margin-bottom: 1.5rem;
+            padding-left: 1rem;
+            border-left: 4px solid #f97316; /* Orange border */
+        }
+        .qa-q {
+            font-weight: 600;
+            color: #b91c1c; /* Deep Red for Question */
+            margin-bottom: 0.25rem;
+        }
+        .qa-a {
+            color: #4a4a4a;
+            font-style: italic;
+        }
+
+        /* 自定義按鈕樣式 */
+        .social-btn {
+            background-color: #1e3a8a; /* Dark Blue for contrast/IG */
+        }
+        .social-btn:hover {
+            background-color: #1d4ed8;
         }
     </style>
 </head>
-<body class="p-4 sm:p-6 flex justify-center">
+<body class="py-6 md:py-12 flex justify-center">
 
-    <div id="loading-overlay" class="fixed inset-0 bg-pink-500/50 flex justify-center items-center z-50">
-        <div class="text-white text-xl flex items-center space-x-3">
-            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>載入中...</span>
+    <!-- Admin Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
+            <h3 class="text-xl font-bold text-red-800 mb-4">管理員登入</h3>
+            <div id="login-message" class="text-sm text-red-500 mb-3 hidden"></div>
+            <form id="login-form" autocomplete="off">
+                <div class="mb-3">
+                    <label for="admin-user" class="block text-sm font-medium text-gray-700">帳號</label>
+                    <input type="text" id="admin-user" name="admin-user" required autocomplete="off"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border">
+                </div>
+                <div class="mb-5">
+                    <label for="admin-pass" class="block text-sm font-medium text-gray-700">密碼</label>
+                    <input type="password" id="admin-pass" name="admin-pass" required autocomplete="new-password"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border">
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="login-cancel" class="px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 transition">
+                        取消
+                    </button>
+                    <button type="submit" id="login-submit" class="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition">
+                        登入
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-    
-    <div id="main-content" class="card-container w-full bg-white rounded-3xl shadow-2xl p-4 sm:p-8 relative hidden">
+    <!-- End Admin Login Modal -->
+
+    <!-- Main App Container -->
+    <div id="app-container" class="w-full max-w-4xl bg-white shadow-2xl rounded-2xl p-0 overflow-hidden">
         
-        <!-- 管理員登入按鈕 -->
-        <button id="admin-login-btn" class="absolute top-4 right-4 text-gray-500 hover:text-pink-600 transition duration-150 p-2 rounded-full bg-pink-50 hover:bg-pink-100" onclick="showLoginModal()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell"><path d="M6 8a6 6 0 1 1 12 0c0 7-3 9-3 9H9s-3-2-3-9"/><path d="M10.375 18a2 2 0 1 0 3.25 0"/></svg>
-        </button>
-        
-        <header class="text-center mb-6 pt-4">
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-pink-700 tracking-wider">
-                九翊美學 × J.Y Beauty Studio
-            </h1>
-            <p class="text-pink-500 font-semibold mt-1">台南 永康區</p>
-            
-            <!-- 社交媒體按鈕 -->
-            <div class="flex justify-center space-x-4 mt-4 mb-6">
-                <!-- Instagram -->
-                <a href="https://www.instagram.com/jystudio_1210?igsh=MWQ3czM4bHRqd2FmZw==" target="_blank" class="p-3 rounded-full shadow-md transition duration-300 transform hover:scale-110" style="background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.75C7.94 4.75 4.75 7.94 4.75 12s3.19 7.25 7.25 7.25 7.25-3.19 7.25-7.25S16.06 4.75 12 4.75zm0 13a5.25 5.25 0 100-10.5 5.25 5.25 0 000 10.5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 7.5h.01"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 7.5h.01"/></svg>
-                </a>
+        <!-- Header & Social Links -->
+        <header class="p-6 bg-red-800 text-white rounded-t-[14px]">
+            <div class="flex justify-between items-center mb-3">
+                <h1 class="text-3xl md:text-4xl font-black tracking-wider">九翊美學 × J.Y Beauty Studio</h1>
                 
-                <!-- LINE -->
-                <a href="https://lin.ee/gRA18AK" target="_blank" class="p-3 rounded-full bg-green-500 shadow-md hover:bg-green-600 transition duration-300 transform hover:scale-110">
-                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.028 2.016c-5.523 0-10.007 4.475-10.007 9.998 0 5.097 3.793 9.324 8.708 9.878v-6.958H8.868V11.05H11.02V8.95c0-2.188 1.309-3.385 3.295-3.385 0.945 0 1.76.07 1.996.1v2.308h-1.378c-1.09 0-1.303 0.518-1.303 1.282v1.688h2.64l-0.457 2.628h-2.183v6.958c4.915-0.554 8.708-4.781 8.708-9.878 0-5.523-4.484-9.998-10.007-9.998z"/></svg>
+                <!-- Admin Login Button -->
+                <button id="admin-login-btn" class="flex items-center space-x-2 text-sm font-medium bg-red-600 hover:bg-red-700 p-2 rounded-full transition shadow-md">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Social Links & Location -->
+            <div class="flex items-center space-x-3 mb-3">
+                <!-- Instagram Link -->
+                <a href="https://www.instagram.com/jystudio_1210?igsh=MWQ3czM4bHRqd2FmZw==" target="_blank"
+                   class="social-btn px-3 py-1 flex items-center space-x-1 rounded-full text-sm font-semibold text-white transition duration-200">
+                    <i data-lucide="instagram" class="w-4 h-4"></i>
+                    <span>IG</span>
+                </a>
+                <!-- LINE Link -->
+                <a href="https://lin.ee/gRA18AK" target="_blank"
+                   class="social-btn px-3 py-1 flex items-center space-x-1 rounded-full text-sm font-semibold text-white transition duration-200"
+                   style="background-color: #00B900;">
+                    <!-- Line Logo - Using a simple icon approximation -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-4 h-4 fill-current">
+                        <path d="M472.9 59.8c-2.3-2.3-5.2-3.4-8.5-3.4H47.6c-3.3 0-6.2 1.1-8.5 3.4-2.3 2.3-3.4 5.2-3.4 8.5v381.4c0 3.3 1.1 6.2 3.4 8.5 2.3 2.3 5.2 3.4 8.5 3.4h375.4l49.9 49.9V68.3c0-3.3-1.1-6.2-3.4-8.5zM227.4 353.5c-4.4 0-8.2-1.5-11.4-4.5-3.2-3-4.8-6.9-4.8-11.5v-80.4c0-4.6 1.6-8.5 4.8-11.5 3.2-3 7-4.5 11.4-4.5h57.4c4.4 0 8.2 1.5 11.4 4.5 3.2 3 4.8 6.9 4.8 11.5v80.4c0 4.6-1.6 8.5-4.8 11.5-3.2 3-7 4.5-11.4 4.5h-57.4zm10.5-177.3c-28.7 0-53.8 10-75.3 30.1-21.6 20.1-32.4 44.8-32.4 74v80.4c0 14.3 2.5 27 7.5 38.3 5 11.3 11.7 20.1 20.2 26.5 8.5 6.4 18.4 9.6 29.8 9.6h57.4c11.3 0 21.2-3.2 29.7-9.6 8.5-6.4 15.2-15.2 20.2-26.5 5-11.3 7.5-24 7.5-38.3v-80.4c0-29.2-10.8-54-32.4-74-21.5-20.1-46.6-30.1-75.3-30.1z"/>
+                    </svg>
+                    <span>LINE</span>
                 </a>
             </div>
+
+            <p class="text-sm font-light text-yellow-300">📍 台南 永康區</p>
         </header>
 
-        <!-- 頁籤/分頁導航 -->
-        <div class="border-b border-pink-200 sticky top-0 bg-white z-10 rounded-t-xl">
-            <div class="flex overflow-x-auto whitespace-nowrap -mb-px">
-                <button class="tab-button active" data-tab="rules" onclick="changeTab('rules')">預約須知</button>
-                <button class="tab-button" data-tab="prices" onclick="changeTab('prices')">價目表</button>
-                <button class="tab-button" data-tab="qa" onclick="changeTab('qa')">Q&A</button>
-                <button class="tab-button" data-tab="events" onclick="changeTab('events')">本月活動</button>
-                <button class="tab-button" data-tab="booking" onclick="changeTab('booking')">預約表單</button>
-                <button id="admin-schedule-tab" class="tab-button hidden" data-tab="schedule" onclick="changeTab('schedule')">預約時刻表</button>
-            </div>
-        </div>
+        <!-- Error/Message Display -->
+        <div id="app-message" class="hidden mx-6 mt-4 p-3 text-sm rounded-lg" role="alert"></div>
 
-        <!-- 內容區域 -->
-        <div id="tab-content" class="bg-white p-4 sm:p-6 rounded-b-3xl min-h-[500px] shadow-inner border border-t-0 border-pink-200">
-            <!-- 內容會由 JavaScript 動態載入/生成 -->
-        </div>
-        
-        <!-- 底部聲明 -->
-        <footer class="text-center mt-8 text-xs text-gray-500 p-2 border-t border-pink-100">
-            本店擁有店內規則及活動之最終解釋權
-            <p id="footer-user-id" class="text-gray-400 mt-1 text-[10px]"></p>
-        </footer>
-    </div>
-    
-    <!-- 管理員登入彈出視窗 (Modal) -->
-    <div id="login-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 hidden items-center justify-center">
-        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm transform transition-all duration-300 scale-100">
-            <h2 class="text-2xl font-bold text-pink-600 mb-4">管理員登入</h2>
-            <div id="login-message" class="mb-4 text-red-500 font-medium hidden"></div>
-            
-            <div class="mb-4">
-                <label for="admin-username" class="block text-sm font-medium text-gray-700">帳號:</label>
-                <input type="text" id="admin-username" class="mt-1 block w-full border border-gray-300 rounded-lg p-2 focus:ring-pink-500 focus:border-pink-500" value="a5527871028" required>
-            </div>
-            <div class="mb-6">
-                <label for="admin-password" class="block text-sm font-medium text-gray-700">密碼:</label>
-                <!-- 使用 password-input class 進行視覺隱藏 -->
-                <input type="password" id="admin-password" class="password-input mt-1 block w-full border border-gray-300 rounded-lg p-2 focus:ring-pink-500 focus:border-pink-500" value="apple5512" required>
-            </div>
-            
-            <div class="flex justify-between space-x-4">
-                <button type="button" onclick="hideLoginModal()" class="w-1/2 py-2 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-100 transition duration-150">取消</button>
-                <button type="submit" onclick="attemptAdminLogin()" class="w-1/2 btn-primary">登入</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 訊息提示視窗 (Custom Alert/Confirm) -->
-    <div id="message-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 hidden items-center justify-center">
-        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm transform transition-all duration-300 scale-100">
-            <h3 id="message-modal-title" class="text-xl font-bold text-pink-600 mb-3">訊息</h3>
-            <p id="message-modal-body" class="text-gray-700 mb-6"></p>
-            <div class="flex justify-end">
-                <button type="button" onclick="hideMessageModal()" class="py-2 px-4 btn-primary">確定</button>
-            </div>
-        </div>
-    </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // 設定日誌級別為 Debug
-        setLogLevel('Debug');
-
-        // 全局變數
-        window.firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
-        window.app = null;
-        window.db = null;
-        window.auth = null;
-        window.userId = null;
-        window.isAdmin = false;
-        window.loginAttempts = 0;
-        window.maxLoginAttempts = 3;
-        window.activeTab = 'rules';
-        
-        // Firestore 集合和文件路徑
-        const APPOINTMENT_CONFIG_COLLECTION = 'appointment_config';
-        const APPOINTMENT_COLLECTION = 'appointments';
-        const RULES_DOC = 'rules';
-        const EVENTS_DOC = 'events';
-
-        // 儲存的內容狀態
-        window.rulesData = {
-            rules: "",
-            attention: ""
-        };
-        window.eventsData = "";
-        window.appointments = [];
-
-        // --- Utility Functions ---
-
-        /** 顯示自定義訊息視窗 */
-        window.showMessageModal = (title, body) => {
-            document.getElementById('message-modal-title').textContent = title;
-            document.getElementById('message-modal-body').textContent = body;
-            document.getElementById('message-modal').classList.remove('hidden');
-            document.getElementById('message-modal').classList.add('flex');
-        };
-
-        /** 隱藏自定義訊息視窗 */
-        window.hideMessageModal = () => {
-            document.getElementById('message-modal').classList.add('hidden');
-            document.getElementById('message-modal').classList.remove('flex');
-        };
-
-        /** 顯示登入視窗 */
-        window.showLoginModal = () => {
-            document.getElementById('login-modal').classList.remove('hidden');
-            document.getElementById('login-modal').classList.add('flex');
-        };
-
-        /** 隱藏登入視窗 */
-        window.hideLoginModal = () => {
-            document.getElementById('login-modal').classList.add('hidden');
-            document.getElementById('login-modal').classList.remove('flex');
-            // 超過嘗試次數也返回主頁面
-            if (window.loginAttempts >= window.maxLoginAttempts) {
-                window.loginAttempts = 0;
-                window.showMessageModal('提示', '登入嘗試過多，請稍後再試。');
-            }
-        };
-
-        /** 格式化日期為 YYYY-MM-DD */
-        window.formatDate = (date) => {
-            const d = new Date(date);
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-
-        // --- Firebase Core Functions ---
-
-        /** 初始化 Firebase */
-        async function initFirebase() {
-            try {
-                if (window.app) return;
+        <!-- Tabs Navigation -->
+        <div id="tabs-container" class="w-full border-b border-gray-200">
+            <div class="flex flex-wrap text-sm font-medium text-center text-gray-500">
                 
-                window.app = initializeApp(window.firebaseConfig);
-                window.db = getFirestore(window.app);
-                window.auth = getAuth(window.app);
-
-                // 認證監聽器
-                onAuthStateChanged(window.auth, async (user) => {
-                    if (user) {
-                        window.userId = user.uid;
-                        document.getElementById('footer-user-id').textContent = `User ID: ${window.userId}`;
-                        // 檢查管理員狀態 (從 sessionStorage 恢復)
-                        window.isAdmin = sessionStorage.getItem('isAdmin') === 'true';
-                        
-                        // 初始化內容
-                        await initializeContent();
-                        
-                        // 啟動快照監聽
-                        setupFirestoreListeners();
-                        
-                        // 初始渲染
-                        document.getElementById('loading-overlay').classList.add('hidden');
-                        document.getElementById('main-content').classList.remove('hidden');
-                        changeTab(window.activeTab); // 首次渲染內容
-                    } else {
-                        // 首次載入或登出，進行認證
-                        try {
-                            if (window.initialAuthToken) {
-                                await signInWithCustomToken(window.auth, window.initialAuthToken);
-                            } else {
-                                await signInAnonymously(window.auth);
-                            }
-                        } catch (e) {
-                            console.error("Firebase Auth failed:", e);
-                            window.showMessageModal('錯誤', 'Firebase 認證失敗，請檢查網路連線。');
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error("Firebase initialization error:", error);
-                window.showMessageModal('錯誤', `Firebase 初始化失敗: ${error.message}`);
-            }
-        }
-
-        /** 設置 Firestore 實時監聽 (onSnapshot) */
-        function setupFirestoreListeners() {
-            if (!window.userId) return;
-
-            // 1. 預約須知監聽
-            const rulesRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', APPOINTMENT_CONFIG_COLLECTION, RULES_DOC);
-            onSnapshot(rulesRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    window.rulesData = docSnap.data();
-                    if (window.activeTab === 'rules') renderContent('rules');
-                }
-            });
-
-            // 2. 本月活動監聽
-            const eventsRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', APPOINTMENT_CONFIG_COLLECTION, EVENTS_DOC);
-            onSnapshot(eventsRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    window.eventsData = docSnap.data().content || '';
-                    if (window.activeTab === 'events') renderContent('events');
-                }
-            });
-            
-            // 3. 預約資料監聽
-            const appointmentsColRef = collection(window.db, 'artifacts', window.appId, 'public', 'data', APPOINTMENT_COLLECTION);
-            const q = query(appointmentsColRef);
-            onSnapshot(q, (snapshot) => {
-                window.appointments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                if (window.activeTab === 'booking') renderContent('booking');
-                if (window.activeTab === 'schedule') renderContent('schedule');
-            });
-
-            // 顯示或隱藏管理員分頁
-            updateAdminUI();
-        }
-
-        /** 檢查並初始化預設內容 */
-        async function initializeContent() {
-            const rulesRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', APPOINTMENT_CONFIG_COLLECTION, RULES_DOC);
-            const eventsRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', APPOINTMENT_CONFIG_COLLECTION, EVENTS_DOC);
-
-            // 預約須知預設內容
-            const defaultRules = {
-                rules: `1. 限生理女、男賓止步
-2. 日間半預約制
-3. 日間時段：10～17點；夜間時段：18～3點
-4. 預約日間不用訂金，但有未到紀錄，下次預約須先匯款訂金（為預約項目總價1/2之金額）
-5. 預約夜間皆需先付款訂金（為預約項目總價1/2之金額）
-6. 遲到15分鐘以上，未先訊息告知即視為未到，並取消預約
-7. 取消預約至少提前三天，如有匯款訂金方可全額退還
-8. 因合作空間，施作空間為布簾隔斷隔音，雖除毛師人都會在，但介意勿約
-9. 美容空間無法攜帶食物及寵物`,
-                attention: `1. 施作日前請停用酸類產品、停止去角質至少一週，避免肌膚過敏或刺激
-2. 毛髮長度需至少 0.5 至 1 公分，請勿自行修剪，以免影響除毛效果
-3. 避開生理期前 5 天到後 3 天
-4. 若有規劃出遊，建議提前3～5天安排除毛時間，讓肌膚有足夠的時間恢復，避免在出遊前一兩天才除毛
-5. 除毛前後請勤勞密集保濕，除毛時有脫皮、泛紅、紅點屬正常現象，請注意產品不能含酸、也沒有美白功能`
-            };
-
-            // 本月活動預設內容
-            const defaultEvents = `* 整個月都享有開幕價
-* 學生價活動過後不會消失
-* 分享LINE官方給好友，一起加好友兩人都能拿到優惠劵，一人最高可拿五張，每次可使用1張
-* 追蹤IG、加LINE官方、Google評論五顆星並留言，經定額折扣完，消費總額再打九折`;
-
-            try {
-                // 檢查並設定預約須知
-                const rulesSnap = await getDoc(rulesRef);
-                if (!rulesSnap.exists()) {
-                    await setDoc(rulesRef, defaultRules);
-                }
-
-                // 檢查並設定本月活動
-                const eventsSnap = await getDoc(eventsRef);
-                if (!eventsSnap.exists()) {
-                    await setDoc(eventsRef, { content: defaultEvents });
-                }
-            } catch (e) {
-                console.warn("Error setting initial data:", e);
-            }
-        }
-
-        // --- Admin Functions ---
-
-        /** 嘗試管理員登入 */
-        window.attemptAdminLogin = () => {
-            const username = document.getElementById('admin-username').value;
-            const password = document.getElementById('admin-password').value;
-            const msgEl = document.getElementById('login-message');
-            msgEl.classList.add('hidden');
-
-            const ADMIN_USER = 'a5527871028';
-            const ADMIN_PASS = 'apple5512';
-
-            if (window.loginAttempts >= window.maxLoginAttempts -1) {
-                window.loginAttempts++;
-                hideLoginModal();
-                return;
-            }
-
-            if (username === ADMIN_USER && password === ADMIN_PASS) {
-                window.isAdmin = true;
-                sessionStorage.setItem('isAdmin', 'true'); // 存儲狀態
-                window.loginAttempts = 0;
-                hideLoginModal();
-                updateAdminUI();
-                renderContent(window.activeTab);
-                window.showMessageModal('登入成功', '您已成功登入管理員模式！');
-            } else {
-                window.loginAttempts++;
-                msgEl.textContent = '請確定帳密或與管理員聯繫';
-                msgEl.classList.remove('hidden');
+                <!-- Tab 1: 預約須知 -->
+                <input type="radio" name="tab-group" id="tab-rules" class="tab-input" checked>
+                <label for="tab-rules" class="tab-label p-3 md:p-4 inline-block cursor-pointer hover:bg-red-50 transition duration-150 rounded-tl-xl text-red-800">預約須知</label>
                 
-                if (window.loginAttempts >= window.maxLoginAttempts) {
-                    hideLoginModal();
-                }
-            }
-        };
+                <!-- Tab 2: 價目表 -->
+                <input type="radio" name="tab-group" id="tab-price" class="tab-input">
+                <label for="tab-price" class="tab-label p-3 md:p-4 inline-block cursor-pointer hover:bg-red-50 transition duration-150 text-red-800">價目表</label>
+                
+                <!-- Tab 3: Q&A -->
+                <input type="radio" name="tab-group" id="tab-qa" class="tab-input">
+                <label for="tab-qa" class="tab-label p-3 md:p-4 inline-block cursor-pointer hover:bg-red-50 transition duration-150 text-red-800">Q&A</label>
 
-        /** 更新管理員介面元素 */
-        function updateAdminUI() {
-            const adminScheduleTab = document.getElementById('admin-schedule-tab');
-            if (window.isAdmin) {
-                adminScheduleTab.classList.remove('hidden');
-            } else {
-                adminScheduleTab.classList.add('hidden');
-                if (window.activeTab === 'schedule') changeTab('rules'); // 如果管理員登出，自動切換到第一個分頁
-            }
-        }
+                <!-- Tab 4: 本月活動 -->
+                <input type="radio" name="tab-group" id="tab-promo" class="tab-input">
+                <label for="tab-promo" class="tab-label p-3 md:p-4 inline-block cursor-pointer hover:bg-red-50 transition duration-150 text-red-800">本月活動</label>
+                
+                <!-- Tab 5: 預約表單 -->
+                <input type="radio" name="tab-group" id="tab-form" class="tab-input">
+                <label for="tab-form" class="tab-label p-3 md:p-4 inline-block cursor-pointer hover:bg-red-50 transition duration-150 text-red-800">預約表單</label>
 
-        /** 儲存預約須知內容 */
-        window.saveRules = async () => {
-            const rules = document.getElementById('edit-rules-content').value;
-            const attention = document.getElementById('edit-attention-content').value;
-            
-            const rulesRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', APPOINTMENT_CONFIG_COLLECTION, RULES_DOC);
-            
-            try {
-                await setDoc(rulesRef, { rules, attention });
-                window.showMessageModal('儲存成功', '預約須知已更新！');
-                // Firestore 監聽器會自動更新 window.rulesData 和 UI
-                renderContent('rules');
-            } catch (e) {
-                console.error("Save rules failed:", e);
-                window.showMessageModal('錯誤', '儲存失敗，請檢查網路。');
-            }
-        };
+                <!-- Tab 6: 管理員專屬 - 預約時刻表 -->
+                <input type="radio" name="tab-group" id="tab-admin" class="tab-input">
+                <label for="tab-admin" class="admin-tab-item tab-label p-3 md:p-4 inline-block cursor-pointer hover:bg-red-50 transition duration-150 text-yellow-300 bg-red-900 border-l border-red-700">管理員：預約時刻表</label>
+            </div>
+        </div>
 
-        /** 儲存本月活動內容 */
-        window.saveEvents = async () => {
-            const content = document.getElementById('edit-events-content').value;
-            
-            const eventsRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', APPOINTMENT_CONFIG_COLLECTION, EVENTS_DOC);
-            
-            try {
-                await setDoc(eventsRef, { content });
-                window.showMessageModal('儲存成功', '本月活動已更新！');
-                // Firestore 監聽器會自動更新 window.eventsData 和 UI
-                renderContent('events');
-            } catch (e) {
-                console.error("Save events failed:", e);
-                window.showMessageModal('錯誤', '儲存失敗，請檢查網路。');
-            }
-        };
-        
-        // --- Content Rendering Functions ---
+        <!-- Tabs Content -->
+        <div id="content-area" class="p-6 md:p-8">
 
-        /** 渲染預約須知內容 (Admin 編輯模式或普通顯示) */
-        function renderRulesContent() {
-            const { rules = '', attention = '' } = window.rulesData;
-            let html = '';
-
-            const listToHtml = (text, title) => {
-                const items = text.split('\n').filter(line => line.trim() !== '');
-                return `
-                    <div class="mb-6 p-4 bg-pink-50 rounded-xl shadow-md">
-                        <h3 class="text-xl font-bold text-pink-600 mb-3 border-b border-pink-200 pb-1">${title}</h3>
-                        <ul class="space-y-2">
-                            ${items.map(item => `
-                                <li class="list-item">
-                                    <span class="list-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="m12 3-1.928 3.864L7 7.042l3.072 1.178L12 12l1.928-3.864 3.072-1.178-3.072-1.178z"/><path d="m17.5 14.5-1.428 2.864L13 18.042l3.072 1.178L17.5 23l1.928-3.864 3.072-1.178-3.072-1.178z"/></svg>
-                                    </span>
-                                    <span class="text-gray-700">${item.substring(item.indexOf('.') + 1).trim()}</span>
-                                </li>
-                            `).join('')}
-                        </ul>
+            <!-- Content 1: 預約須知 (可編輯) -->
+            <div class="tab-content content-rules">
+                <h2 class="text-2xl font-bold text-red-700 mb-4 border-b pb-2">預約須知</h2>
+                <div id="rules-content" class="space-y-6 text-gray-700">
+                    <div id="rules-display">載入中...</div>
+                    <div id="rules-edit" class="space-y-4 hidden border p-4 rounded-lg bg-gray-50">
+                        <h3 class="font-bold text-lg text-red-800">編輯 店內規則</h3>
+                        <textarea id="rules-text-edit" rows="10" class="w-full p-2 border rounded resize-y"></textarea>
+                        <h3 class="font-bold text-lg text-red-800">編輯 施作前注意</h3>
+                        <textarea id="cautions-text-edit" rows="10" class="w-full p-2 border rounded resize-y"></textarea>
+                        <button id="save-rules-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150">儲存變更</button>
                     </div>
-                `;
-            };
-
-            if (window.isAdmin) {
-                // 管理員編輯模式
-                html = `
-                    <h2 class="admin-section-title">編輯預約須知</h2>
-                    
-                    <div class="mb-8">
-                        <label for="edit-rules-content" class="block text-lg font-semibold text-pink-700 mb-2">店內規則 (每行一個項目):</label>
-                        <textarea id="edit-rules-content" rows="10" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-pink-500 focus:border-pink-500">${rules}</textarea>
-                    </div>
-
-                    <div class="mb-8">
-                        <label for="edit-attention-content" class="block text-lg font-semibold text-pink-700 mb-2">施作前注意 (每行一個項目):</label>
-                        <textarea id="edit-attention-content" rows="10" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-pink-500 focus:border-pink-500">${attention}</textarea>
-                    </div>
-                    
-                    <button onclick="saveRules()" class="btn-primary w-full sm:w-auto">儲存更改</button>
-                    <p class="text-sm text-gray-500 mt-2">請確保每個項目都以 "1. " 或 "2. " 等數字開頭，便於排版解析。</p>
-                `;
-            } else {
-                // 普通顯示模式
-                html = listToHtml(rules, '店內規則');
-                html += listToHtml(attention, '施作前注意');
-            }
-
-            document.getElementById('tab-content').innerHTML = html;
-        }
-
-        /** 渲染價目表內容 */
-        function renderPricesContent() {
-            const pricingData = [
-                { category: '私密處', items: [
-                    { name: '比基尼除毛', original: 1000, open: 899, student: 799 },
-                    { name: '巴西式全除', original: 1500, open: 1299, student: 999 },
-                ]},
-                { category: '手部', items: [
-                    { name: '腋下', original: 600, open: 499, student: 399 },
-                    { name: '上/下手臂', original: 800, open: 699, student: 499 },
-                    { name: '全手臂', original: 1200, open: 1099, student: 899 },
-                    { name: '手指', original: 400, open: 299, student: 199 },
-                ]},
-                { category: '腿部', items: [
-                    { name: '小腿', original: 1000, open: 899, student: 699 },
-                    { name: '大腿', original: 1200, open: 1099, student: 799 },
-                    { name: '全腿', original: 1600, open: 1399, student: 1099 },
-                    { name: '膝蓋', original: 400, open: 199, student: 150 },
-                ]},
-                { category: '其他部位', items: [
-                    { name: '肚子', original: 1300, open: 1099, student: 799 },
-                    { name: '上/下背', original: 900, open: 699, student: 599 },
-                    { name: '全背', original: 1400, open: 1099, student: 899 },
-                ]},
-            ];
-
-            let html = `
-                <h2 class="text-2xl font-extrabold text-pink-700 mb-4 text-center">熱蠟除毛</h2>
-                <p class="text-lg font-semibold text-pink-500 mb-6 text-center">使用 italwax 義朵熱蠟</p>
-            `;
-
-            pricingData.forEach(section => {
-                html += `
-                    <div class="mb-8 p-4 bg-white rounded-xl shadow-lg border border-pink-100">
-                        <h3 class="text-xl font-bold text-pink-600 mb-4 border-l-4 border-pink-500 pl-3">${section.category}</h3>
-                        <div class="overflow-x-auto">
-                            <table class="price-table">
-                                <thead>
-                                    <tr>
-                                        <th class="text-left w-1/4">項目</th>
-                                        <th class="w-1/4">原價</th>
-                                        <th class="w-1/4 bg-red-100 text-red-600">開幕價</th>
-                                        <th class="w-1/4 bg-yellow-100 text-yellow-700">學生價</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${section.items.map(item => `
-                                        <tr>
-                                            <td class="text-left font-medium text-pink-800">${item.name}</td>
-                                            <td>$${item.original}</td>
-                                            <td class="font-bold text-red-600">$${item.open}</td>
-                                            <td class="font-bold text-yellow-700">$${item.student}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += `
-                <div class="mt-8 text-sm text-gray-500 bg-pink-50 p-4 rounded-xl space-y-2">
-                    <p>✨ 上述開幕價只限開幕體驗月有而已，活動結束恢復原價。</p>
-                    <p>✨ 開幕價及學生價都符合資格擇一參加。</p>
-                    <p>✨ 學生出示實體卡並加入官方 LINE 方可享學生價優惠，可參加開幕月折上折活動。</p>
                 </div>
-            `;
-            document.getElementById('tab-content').innerHTML = html;
-        }
+            </div>
 
-        /** 渲染 Q&A 內容 */
-        function renderQAContent() {
-            const qaData = [
-                { category: '活動', items: [
-                    { q: '開幕月期間為何時？', a: '整個 12 月都是喔！' },
-                    { q: '折上折活動是什麼意思？', a: '開幕月只要你有優惠卷或符合任一資格折扣，且單筆消費金額滿五百以上，都可以併行使用。' },
-                    { q: '活動好多我有點混亂。', a: '可以參考右上方「本月活動」頁面資訊，有這個月活動詳述。' },
-                ]},
-                { category: '預約', items: [
-                    { q: '半預約制什麼意思？你們營業 24 小時嗎？', a: '希望你們提前約，但在日間時段 (10~17 點) 可以致電詢問當天還有沒有時間段，如果有還是可以前來施作；夜間時段 (18~3 點) 至少三天前就需要約。' },
-                    { q: '我想預約，應該怎麼做？', a: '日間時段 (10~17 點) LINE 都可以預約喔。' },
-                    { q: '請問如果我來不及在預約日三天前取消怎麼辦？', a: '下次預約可以先私訊，完成訂金匯款就會幫你預約。' },
-                    { q: '我未到一次，再次預約又是三天內取消，是不是訂金就被吃掉了？', a: '是的，這樣表示未到兩次，兩個時間段都已經為您安排。' },
-                ]},
-                { category: 'J.Y 特別加購項目：臨托服務', items: [
-                    { q: '我想除毛時，預約臨時托育服務，可以嗎？有沒有什麼限制？', a: '暫時不開放，之後僅開放夜間時段臨托，年齡限制 5 歲以下，且也需要看保母安排，如果可以接受請先加我們 LINE，私訊「我想加購托育」，服務人員會回覆妳價格及時段。' },
-                    { q: '臨時托育服務是專業人員嗎？', a: '是，有永康區居家托育證照，加入準公托而且是相關科系。' },
-                    { q: '我加購臨時托育服務看得到小孩嗎？', a: '通常看不到，但小孩就在二樓而已，而妳在一樓施作。如果要看到可以另外事先提出。' },
-                    { q: '沒加購臨托可以帶小孩去嗎？', a: '沒辦法喔，因施作時環境需要安靜、也比較不能被動彈。' },
-                ]},
-                { category: '熱蠟', items: [
-                    { q: '熱蠟除毛好處？', a: '除毛效果依個人體質約維持三~七週，並且連根拔除過程中因破壞毛囊，長期固定回除能使毛髮變細、變少，生長速度也會變慢。' },
-                    { q: '為什麼除毛完會變白？', a: '因為熱蠟附帶去除老廢角質，也有體驗客因為這樣除全身熱蠟喔！(全身熱蠟需預約整天喔)' },
-                    { q: '會不會很燙或很痛？', a: '本店使用 italwax 義朵熱蠟，不會很燙，之於一般熱蠟減痛非常多，但依據個人毛囊狀況會有不同痛感。' },
-                    { q: '什麼情況不能做熱蠟？', a: '禁忌症（不可預約）：曬傷｜換膚｜嚴重靜脈曲張｜性病及其他傳染性疾病｜痘痘藥物中｜12 週內或 35 週以上之孕婦。須醫生同意：糖尿病｜抗生素中｜免疫力失調｜避孕藥/荷爾蒙治療。' },
-                    { q: '術後需要特別做什麼保養嗎？', a: '除毛前後請勤勞密集保濕，除毛一週後去角質，有助於新毛髮及避免內崁毛狀況，請注意產品不能含酸、也沒有美白功能。' },
-                ]},
-            ];
-
-            let html = `
-                <h2 class="text-2xl font-extrabold text-pink-700 mb-6 text-center">常見問題 Q&A</h2>
-            `;
-
-            qaData.forEach(section => {
-                html += `
-                    <div class="mb-8">
-                        <h3 class="text-xl font-bold text-pink-600 mb-4 border-l-4 border-pink-500 pl-3">${section.category}</h3>
-                        <div class="space-y-4">
-                            ${section.items.map(item => `
-                                <div class="p-4 bg-pink-50 rounded-xl shadow-sm">
-                                    <p class="font-bold text-gray-800 flex items-start"><span class="text-red-500 mr-2">Q:</span> ${item.q}</p>
-                                    <p class="text-gray-600 mt-1 flex items-start"><span class="text-green-600 mr-2">A:</span> ${item.a}</p>
+            <!-- Content 2: 價目表 -->
+            <div class="tab-content content-price">
+                <h2 class="text-2xl font-bold text-red-700 mb-6 border-b pb-2">價目表</h2>
+                <div class="space-y-8">
+                    <!-- 熱蠟除毛 -->
+                    <div class="p-4 rounded-xl bg-yellow-50 border border-yellow-200 shadow-md">
+                        <h3 class="text-xl font-extrabold text-red-600 mb-2">熱蠟除毛</h3>
+                        <p class="text-sm italic text-gray-600 mb-4">使用 italwax 義朵熱蠟</p>
+                        
+                        <!-- 價格表模板 -->
+                        <div id="price-list-container" class="space-y-6">
+                            <!-- Private Area -->
+                            <div class="border-t pt-4 border-yellow-300">
+                                <h4 class="font-bold text-lg text-red-800 mb-2 flex items-center"><i data-lucide="heart" class="w-4 h-4 mr-2 fill-red-400 text-red-400"></i> 私密處</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-sm whitespace-nowrap">
+                                        <thead>
+                                            <tr class="bg-red-100 text-red-800">
+                                                <th class="px-4 py-2">項目</th>
+                                                <th class="px-4 py-2">原價</th>
+                                                <th class="px-4 py-2 text-orange-500">開幕價</th>
+                                                <th class="px-4 py-2 text-green-600">學生價</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-b">
+                                                <td class="px-4 py-2">比基尼除毛</td><td>1000</td><td class="text-orange-500 font-semibold">899</td><td class="text-green-600 font-semibold">799</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-4 py-2">巴西式全除</td><td>1500</td><td class="text-orange-500 font-semibold">1299</td><td class="text-green-600 font-semibold">999</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
-                            `).join('')}
+                            </div>
+
+                            <!-- Arms -->
+                            <div class="border-t pt-4 border-yellow-300">
+                                <h4 class="font-bold text-lg text-red-800 mb-2 flex items-center"><i data-lucide="armchair" class="w-4 h-4 mr-2"></i> 手部</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-sm whitespace-nowrap">
+                                        <thead>
+                                            <tr class="bg-red-100 text-red-800">
+                                                <th class="px-4 py-2">項目</th>
+                                                <th class="px-4 py-2">原價</th>
+                                                <th class="px-4 py-2 text-orange-500">開幕價</th>
+                                                <th class="px-4 py-2 text-green-600">學生價</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-b"><td>腋下</td><td>600</td><td class="text-orange-500 font-semibold">499</td><td class="text-green-600 font-semibold">399</td></tr>
+                                            <tr class="border-b"><td>上/下手臂</td><td>800</td><td class="text-orange-500 font-semibold">699</td><td class="text-green-600 font-semibold">499</td></tr>
+                                            <tr class="border-b"><td>全手臂</td><td>1200</td><td class="text-orange-500 font-semibold">1099</td><td class="text-green-600 font-semibold">899</td></tr>
+                                            <tr><td>手指</td><td>400</td><td class="text-orange-500 font-semibold">299</td><td class="text-green-600 font-semibold">199</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Legs -->
+                            <div class="border-t pt-4 border-yellow-300">
+                                <h4 class="font-bold text-lg text-red-800 mb-2 flex items-center"><i data-lucide="footprints" class="w-4 h-4 mr-2"></i> 腿部</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-sm whitespace-nowrap">
+                                        <thead>
+                                            <tr class="bg-red-100 text-red-800">
+                                                <th class="px-4 py-2">項目</th>
+                                                <th class="px-4 py-2">原價</th>
+                                                <th class="px-4 py-2 text-orange-500">開幕價</th>
+                                                <th class="px-4 py-2 text-green-600">學生價</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-b"><td>小腿</td><td>1000</td><td class="text-orange-500 font-semibold">899</td><td class="text-green-600 font-semibold">699</td></tr>
+                                            <tr class="border-b"><td>大腿</td><td>1200</td><td class="text-orange-500 font-semibold">1099</td><td class="text-green-600 font-semibold">799</td></tr>
+                                            <tr class="border-b"><td>全腿</td><td>1600</td><td class="text-orange-500 font-semibold">1399</td><td class="text-green-600 font-semibold">1099</td></tr>
+                                            <tr><td>膝蓋</td><td>400</td><td class="text-orange-500 font-semibold">199</td><td class="text-green-600 font-semibold">150</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Other -->
+                            <div class="border-t pt-4 border-yellow-300">
+                                <h4 class="font-bold text-lg text-red-800 mb-2 flex items-center"><i data-lucide="tag" class="w-4 h-4 mr-2"></i> 其他部位</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-sm whitespace-nowrap">
+                                        <thead>
+                                            <tr class="bg-red-100 text-red-800">
+                                                <th class="px-4 py-2">項目</th>
+                                                <th class="px-4 py-2">原價</th>
+                                                <th class="px-4 py-2 text-orange-500">開幕價</th>
+                                                <th class="px-4 py-2 text-green-600">學生價</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-b"><td>肚子</td><td>1300</td><td class="text-orange-500 font-semibold">1099</td><td class="text-green-600 font-semibold">799</td></tr>
+                                            <tr class="border-b"><td>上/下背</td><td>900</td><td class="text-orange-500 font-semibold">699</td><td class="text-green-600 font-semibold">599</td></tr>
+                                            <tr><td>全背</td><td>1400</td><td class="text-orange-500 font-semibold">1099</td><td class="text-green-600 font-semibold">899</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 價格備註 -->
+                        <div class="mt-6 p-3 bg-red-100 border border-red-300 rounded-lg text-sm text-red-700 space-y-2">
+                            <p class="font-semibold flex items-start"><i data-lucide="star" class="w-4 h-4 mr-2 mt-1 flex-shrink-0"></i> 上述開幕價只限開幕體驗月有而已，活動結束恢復原價</p>
+                            <p class="font-semibold flex items-start"><i data-lucide="star" class="w-4 h-4 mr-2 mt-1 flex-shrink-0"></i> 開幕價及學生價都符合資格擇一參加</p>
+                            <p class="font-semibold flex items-start"><i data-lucide="star" class="w-4 h-4 mr-2 mt-1 flex-shrink-0"></i> 學生出示實體卡並加入官方LINE方可享學生價優惠，可參加開幕月折上折活動</p>
                         </div>
                     </div>
-                `;
-            });
-
-            document.getElementById('tab-content').innerHTML = html;
-        }
-
-        /** 渲染本月活動內容 (Admin 編輯模式或普通顯示) */
-        function renderEventsContent() {
-            const content = window.eventsData;
-            let html = '';
-
-            const listToHtml = (text) => {
-                const items = text.split('\n').filter(line => line.trim() !== '');
-                return `
-                    <ul class="space-y-4">
-                        ${items.map(item => `
-                            <li class="flex items-start space-x-3 p-3 bg-pink-50 rounded-xl shadow-sm">
-                                <span class="text-pink-600 flex-shrink-0 mt-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gift"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v9"/><path d="M5 12v9"/><path d="M22 8c0-3.37-2.68-6-6-6-3.32 0-6 2.68-6 6"/><path d="M2 8c0-3.37 2.68-6 6-6 3.32 0 6 2.68 6 6"/></svg>
-                                </span>
-                                <span class="text-gray-700 font-medium">${item.replace(/^\*\s*/, '')}</span>
-                            </li>
-                        `).join('')}
-                    </ul>
-                `;
-            };
-
-            if (window.isAdmin) {
-                // 管理員編輯模式
-                html = `
-                    <h2 class="admin-section-title">編輯本月活動</h2>
-                    
-                    <div class="mb-8">
-                        <label for="edit-events-content" class="block text-lg font-semibold text-pink-700 mb-2">活動內容 (每行一個項目):</label>
-                        <textarea id="edit-events-content" rows="10" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-pink-500 focus:border-pink-500">${content}</textarea>
+                </div>
+            </div>
+            
+            <!-- Content 3: Q&A -->
+            <div class="tab-content content-qa">
+                <h2 class="text-2xl font-bold text-red-700 mb-4 border-b pb-2">常見問答 Q&A</h2>
+                <div class="space-y-6">
+                    <h3 class="text-xl font-bold text-red-600 border-b-2 border-red-300 pb-1">活動相關</h3>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 開幕月期間為何時？</p>
+                        <p class="qa-a">A: 整個12月都是喔！</p>
                     </div>
-                    
-                    <button onclick="saveEvents()" class="btn-primary w-full sm:w-auto">儲存更改</button>
-                    <p class="text-sm text-gray-500 mt-2">請確保每個項目都以 "*" 或其他符號開頭，便於排版解析。</p>
-                `;
-            } else {
-                // 普通顯示模式
-                html = `
-                    <h2 class="text-2xl font-extrabold text-pink-700 mb-6 text-center">🎉 本月活動 (12 月開幕月) 🎉</h2>
-                    ${listToHtml(content)}
-                `;
-            }
-
-            document.getElementById('tab-content').innerHTML = html;
-        }
-
-        /** 渲染預約表單 */
-        function renderBookingForm() {
-            // 所有熱蠟除毛項目
-            const services = [
-                '比基尼除毛', '巴西式全除', '腋下', '上/下手臂', '全手臂', '手指', 
-                '小腿', '大腿', '全腿', '膝蓋', '肚子', '上/下背', '全背'
-            ];
-            // 預約時間段
-            const timeSlots = ['10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00', '24:00'];
-            
-            // 找出已預約的時段 (Date+Time Slot)
-            const bookedSlots = new Set();
-            window.appointments.forEach(appt => {
-                const key = `${appt.date}-${appt.timeSlot}`;
-                bookedSlots.add(key);
-            });
-            
-            // 生成日曆 HTML
-            const today = new Date();
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
-            
-            let calendarHtml = '';
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-            for (let i = 1; i <= daysInMonth; i++) {
-                const date = new Date(currentYear, currentMonth, i);
-                const formattedDate = formatDate(date);
-                const isPast = date < today.setDate(today.getDate() - 1);
-                
-                // 檢查這一天是否所有時段都被預約走 (8個時段都被預約)
-                let dayFullyBooked = true;
-                for (const slot of timeSlots) {
-                    if (!bookedSlots.has(`${formattedDate}-${slot}`)) {
-                        dayFullyBooked = false;
-                        break;
-                    }
-                }
-
-                const dayOfWeek = date.getDay(); // 0=Sun, 6=Sat
-                
-                calendarHtml += `
-                    <button 
-                        type="button" 
-                        data-date="${formattedDate}" 
-                        onclick="selectDate('${formattedDate}', this)" 
-                        ${isPast || dayFullyBooked ? 'disabled' : ''}
-                        class="calendar-day 
-                            w-full h-12 flex flex-col items-center justify-center 
-                            rounded-lg border-2 font-semibold 
-                            ${dayFullyBooked ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 
-                                (isPast ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 
-                                'bg-white text-gray-700 border-pink-300 hover:bg-pink-100 hover:border-pink-500 transition duration-150')}
-                            ${dayOfWeek === 0 || dayOfWeek === 6 ? 'text-red-500' : ''}
-                        "
-                    >
-                        ${i}
-                        <span class="text-[10px] font-normal">${['日', '一', '二', '三', '四', '五', '六'][dayOfWeek]}</span>
-                    </button>
-                `;
-            }
-            
-            let html = `
-                <h2 class="text-2xl font-extrabold text-pink-700 mb-6 text-center">📅 預約表單</h2>
-                <form id="booking-form" onsubmit="submitBookingForm(event)">
-                    
-                    <div class="mb-4">
-                        <label for="name" class="block text-sm font-medium text-gray-700">姓名 <span class="text-red-500">*</span></label>
-                        <input type="text" id="name" name="name" class="mt-1 block w-full border border-gray-300 rounded-lg p-2 focus:ring-pink-500 focus:border-pink-500" required>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 折上折活動是什麼意思？</p>
+                        <p class="qa-a">A: 開幕月只要你有優惠卷或符合任一資格折扣，且單筆消費金額滿五百以上，都可以併行使用。</p>
+                    </div>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 活動好多我有點混亂。</p>
+                        <p class="qa-a">A: 可以參考右上方「本月活動」頁面資訊，有這個月活動詳述。</p>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="service" class="block text-sm font-medium text-gray-700">預約項目 <span class="text-red-500">*</span></label>
-                        <select id="service" name="service" class="mt-1 block w-full border border-gray-300 rounded-lg p-2 focus:ring-pink-500 focus:border-pink-500" required>
-                            <option value="">請選擇熱蠟除毛項目</option>
-                            ${services.map(s => `<option value="${s}">${s}</option>`).join('')}
+                    <h3 class="text-xl font-bold text-red-600 border-b-2 border-red-300 pb-1 pt-4">預約相關</h3>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 半預約制什麼意思？你們營業24小時嗎？</p>
+                        <p class="qa-a">A: 希望你們提前約，但在日間時段 (10:00~17:00) 可以致電詢問當天還有沒有時間段，如果有還是可以前來施作；夜間時段 (18:00~03:00) 至少三天前就需要約。</p>
+                    </div>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 我想預約，應該怎麼做？</p>
+                        <p class="qa-a">A: 日間時段 (10:00~17:00) LINE 都可以預約喔。</p>
+                    </div>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 請問如果我來不及在預約日三天前取消怎麼辦？</p>
+                        <p class="qa-a">A: 下次預約可以先私訊，完成訂金匯款就會幫你預約。</p>
+                    </div>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 我未到一次，再次預約又是三天內取消，是不是訂金就被吃掉了？</p>
+                        <p class="qa-a">A: 是的，這樣表示未到兩次，兩個時間段都已經為您安排。</p>
+                    </div>
+                    
+                    <h3 class="text-xl font-bold text-red-600 border-b-2 border-red-300 pb-1 pt-4">J.Y 特別加購項目：臨托服務</h3>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 我想除毛時，預約臨時托育服務，可以嗎？有沒有什麼限制？</p>
+                        <p class="qa-a">A: 暫時不開放，之後僅開放夜間時段臨托，年齡限制 5 歲以下，且也需要看保母安排，如果可以接受請先加我們 LINE，私訊「我想加購托育」，服務人員會回覆您價格及時段。</p>
+                    </div>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 臨時托育服務是專業人員嗎？</p>
+                        <p class="qa-a">A: 是，有永康區居家托育證照，加入準公托而且是相關科系。</p>
+                    </div>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 我加購臨時托育服務看得到小孩嗎？</p>
+                        <p class="qa-a">A: 通常看不到，但小孩就在二樓而已，而妳在一樓施作。如果要看到可以另外事先提出。</p>
+                    </div>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 沒加購臨托可以帶小孩去嗎？</p>
+                        <p class="qa-a">A: 沒辦法喔，因施作時環境需要安靜、也比較不能被動彈。</p>
+                    </div>
+                    
+                    <h3 class="text-xl font-bold text-red-600 border-b-2 border-red-300 pb-1 pt-4">熱蠟相關</h3>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 熱蠟除毛好處？</p>
+                        <p class="qa-a">A: 除毛效果依個人體質約維持三~七週，並且連根拔除過程中因破壞毛囊，長期固定回除能使毛髮變細、變少，生長速度也會變慢。</p>
+                    </div>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 為什麼除毛完會變白？</p>
+                        <p class="qa-a">A: 因為熱蠟附帶去除老廢角質，也有體驗客因為這樣除全身熱蠟喔！(全身熱蠟需預約整天喔)</p>
+                    </div>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 會不會很燙或很痛？</p>
+                        <p class="qa-a">A: 本店使用 italwax 義朵熱蠟，不會很燙，之於一般熱蠟減痛非常多，但依據個人毛囊狀況會有不同痛感。</p>
+                    </div>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 什麼情況不能做熱蠟？</p>
+                        <div class="mt-2 text-sm">
+                            <p class="font-medium text-red-700">禁忌症（不可預約）：</p>
+                            <ul class="list-disc list-inside ml-4 text-gray-600">
+                                <li>曬傷、換膚、嚴重靜脈曲張</li>
+                                <li>性病及其他傳染性疾病</li>
+                                <li>痘痘藥物中</li>
+                                <li>12 週內或 35 週以上之孕婦</li>
+                            </ul>
+                            <p class="font-medium text-red-700 mt-2">須醫生同意：</p>
+                            <ul class="list-disc list-inside ml-4 text-gray-600">
+                                <li>糖尿病、抗生素中、免疫力失調</li>
+                                <li>避孕藥/荷爾蒙治療</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="qa-block">
+                        <p class="qa-q">Q: 術後需要特別做什麼保養嗎？</p>
+                        <p class="qa-a">A: 除毛前後請勤勞密集保濕，除毛一週後去角質，有助於新毛髮及避免內崁毛狀況，請注意產品不能含酸、也沒有美白功能。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content 4: 本月活動 (可編輯) -->
+            <div class="tab-content content-promo">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h2 class="text-2xl font-bold text-red-700">本月活動</h2>
+                    <button id="edit-promo-btn" class="hidden text-sm font-semibold bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded transition duration-150">編輯</button>
+                </div>
+                
+                <div id="promo-content" class="space-y-6 text-gray-700">
+                    <div id="promo-display">載入中...</div>
+                    <div id="promo-edit" class="space-y-4 hidden border p-4 rounded-lg bg-gray-50">
+                        <textarea id="promo-text-edit" rows="15" class="w-full p-2 border rounded resize-y"></textarea>
+                        <button id="save-promo-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150">儲存變更</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content 5: 預約表單 -->
+            <div class="tab-content content-form">
+                <h2 class="text-2xl font-bold text-red-700 mb-6 border-b pb-2">預約表單</h2>
+                <div id="booking-message" class="hidden p-3 mb-4 rounded-lg text-sm"></div>
+
+                <form id="booking-form" class="space-y-4">
+                    <!-- 姓名 -->
+                    <div>
+                        <label for="booking-name" class="block text-sm font-medium text-gray-700">姓名</label>
+                        <input type="text" id="booking-name" required
+                               class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- 預約項目 -->
+                    <div>
+                        <label for="booking-service" class="block text-sm font-medium text-gray-700">預約項目</label>
+                        <select id="booking-service" required
+                                class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <option value="" disabled selected>請選擇熱蠟除毛項目</option>
+                            <optgroup label="私密處">
+                                <option value="比基尼除毛">比基尼除毛</option>
+                                <option value="巴西式全除">巴西式全除</option>
+                            </optgroup>
+                            <optgroup label="手部">
+                                <option value="腋下">腋下</option>
+                                <option value="上/下手臂">上/下手臂</option>
+                                <option value="全手臂">全手臂</option>
+                                <option value="手指">手指</option>
+                            </optgroup>
+                            <optgroup label="腿部">
+                                <option value="小腿">小腿</option>
+                                <option value="大腿">大腿</option>
+                                <option value="全腿">全腿</option>
+                                <option value="膝蓋">膝蓋</option>
+                            </optgroup>
+                            <optgroup label="其他部位">
+                                <option value="肚子">肚子</option>
+                                <option value="上/下背">上/下背</option>
+                                <option value="全背">全背</option>
+                            </optgroup>
                         </select>
                     </div>
 
-                    <!-- 預約日期 (月曆) -->
-                    <div class="mb-6 p-4 bg-pink-50 rounded-xl">
-                        <label class="block text-sm font-bold text-pink-700 mb-3">預約日期 (本月) <span class="text-red-500">*</span></label>
-                        <p class="text-center font-bold text-lg mb-3">${currentYear} 年 ${currentMonth + 1} 月</p>
-                        <div class="grid grid-cols-7 gap-2">
-                            ${calendarHtml}
-                        </div>
-                        <input type="hidden" id="selected-date" name="date" required>
-                        <p id="date-selection-msg" class="text-center text-sm text-pink-500 mt-2 font-medium">請點選上方的日期</p>
+                    <!-- 預約日期 (日曆/月曆) -->
+                    <div>
+                        <label for="booking-date" class="block text-sm font-medium text-gray-700 mb-2">預約日期</label>
+                        <input type="date" id="booking-date" required
+                               class="block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
-                    <!-- 預約時間段 -->
-                    <div class="mb-6 p-4 bg-pink-50 rounded-xl">
-                        <label class="block text-sm font-bold text-pink-700 mb-3">預約時間段 <span class="text-red-500">*</span></label>
-                        <div id="time-slots-container" class="grid grid-cols-4 gap-2">
-                            ${timeSlots.map(slot => `
-                                <button type="button" data-slot="${slot}" onclick="selectTimeSlot('${slot}', this)" class="time-slot-btn bg-white text-gray-700 border border-pink-300 rounded-lg py-2 hover:bg-pink-100 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed" disabled>
-                                    ${slot}
-                                </button>
-                            `).join('')}
+                    <!-- 預約時間段 (動態時段) -->
+                    <div id="time-slot-container">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">預約時間段 (請先選定日期)</label>
+                        <div id="time-slots" class="flex flex-wrap gap-2">
+                            <!-- Time slots will be dynamically generated here -->
+                            <p class="text-sm text-gray-500">請在上方選擇日期。</p>
                         </div>
-                        <input type="hidden" id="selected-time-slot" name="timeSlot" required>
-                        <p class="text-xs text-gray-500 mt-2">請先選擇日期，再選擇時間段。</p>
+                    </div>
+
+                    <!-- 學生身份 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">是否為學生身份</label>
+                        <div class="flex items-center space-x-4">
+                            <input type="radio" id="is-student-yes" name="is-student" value="是" required><label for="is-student-yes" class="text-sm text-gray-700">是</label>
+                            <input type="radio" id="is-student-no" name="is-student" value="否" checked><label for="is-student-no" class="text-sm text-gray-700">否</label>
+                        </div>
+                        <p id="student-tip" class="hidden text-xs mt-1 p-2 bg-yellow-100 text-yellow-800 rounded">⚠️ 當天請幫我帶學生證喔！</p>
                     </div>
                     
-                    <!-- 附加問題 -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">是否為學生身份？</label>
-                        <div class="flex space-x-4 mt-1">
-                            <label class="inline-flex items-center"><input type="radio" name="isStudent" value="是" class="form-radio text-pink-600" onchange="toggleStudentTip(true)"> 是</label>
-                            <label class="inline-flex items-center"><input type="radio" name="isStudent" value="否" class="form-radio text-pink-600" checked onchange="toggleStudentTip(false)"> 否</label>
+                    <!-- 曾經預約未到 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">是否曾經預約未到</label>
+                        <div class="flex items-center space-x-4">
+                            <input type="radio" id="is-noshow-yes" name="is-noshow" value="是" required><label for="is-noshow-yes" class="text-sm text-gray-700">是</label>
+                            <input type="radio" id="is-noshow-no" name="is-noshow" value="否" checked><label for="is-noshow-no" class="text-sm text-gray-700">否</label>
                         </div>
-                        <p id="student-tip" class="text-sm text-yellow-600 bg-yellow-100 p-2 rounded-lg mt-2 hidden">當天請幫我帶學生證喔！</p>
+                        <p id="noshow-tip" class="hidden text-xs mt-1 p-2 bg-red-100 text-red-800 rounded">⚠️ 需要聯絡 LINE 官方匯款訂金喔！</p>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">是否曾經預約未到？</label>
-                        <div class="flex space-x-4 mt-1">
-                            <label class="inline-flex items-center"><input type="radio" name="didNoShow" value="是" class="form-radio text-pink-600" onchange="toggleNoShowTip(true)"> 是</label>
-                            <label class="inline-flex items-center"><input type="radio" name="didNoShow" value="否" class="form-radio text-pink-600" checked onchange="toggleNoShowTip(false)"> 否</label>
+                    <!-- 願意成為模特兒 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">是否願意成為模特兒</label>
+                        <div class="flex items-center space-x-4">
+                            <input type="radio" id="is-model-yes" name="is-model" value="是" required><label for="is-model-yes" class="text-sm text-gray-700">是</label>
+                            <input type="radio" id="is-model-no" name="is-model" value="否" checked><label for="is-model-no" class="text-sm text-gray-700">否</label>
                         </div>
-                        <p id="noshow-tip" class="text-sm text-red-600 bg-red-100 p-2 rounded-lg mt-2 hidden">需要聯絡 LINE 官方匯款訂金喔！</p>
+                        <p id="model-tip" class="hidden text-xs mt-1 p-2 bg-green-100 text-green-800 rounded">📸 模特兒另有超優惠價格，需配合現場拍作品集並上傳到社群喔！(不會看出是本人)</p>
                     </div>
 
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700">是否願意成為模特兒？</label>
-                        <div class="flex space-x-4 mt-1">
-                            <label class="inline-flex items-center"><input type="radio" name="isModel" value="是" class="form-radio text-pink-600" onchange="toggleModelTip(true)"> 是</label>
-                            <label class="inline-flex items-center"><input type="radio" name="isModel" value="否" class="form-radio text-pink-600" checked onchange="toggleModelTip(false)"> 否</label>
-                        </div>
-                        <p id="model-tip" class="text-sm text-blue-600 bg-blue-100 p-2 rounded-lg mt-2 hidden">模特兒另有超優惠價格，需配合現場拍作品集並上傳到社群喔！(不會看出是本人)</p>
-                    </div>
-
-                    <button type="submit" class="btn-primary w-full text-lg">送出預約</button>
+                    <!-- 提交按鈕 -->
+                    <button type="submit" id="booking-submit-btn"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-150 ease-in-out shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        送出預約
+                    </button>
                 </form>
-            `;
-            document.getElementById('tab-content').innerHTML = html;
-            
-            // 重新應用日期和時間選擇器的邏輯
-            document.querySelectorAll('.calendar-day:not([disabled])').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    updateTimeSlotsAvailability(btn.dataset.date);
-                });
-            });
-            // 確保表單提示框狀態正確
-            toggleStudentTip(document.querySelector('input[name="isStudent"]:checked').value === '是');
-            toggleNoShowTip(document.querySelector('input[name="didNoShow"]:checked').value === '是');
-            toggleModelTip(document.querySelector('input[name="isModel"]:checked').value === '是');
-        }
-        
-        // --- Booking Form Helper Functions ---
+            </div>
 
-        /** 日期選擇邏輯 */
-        window.selectDate = (date, element) => {
-            document.getElementById('selected-date').value = date;
-            document.getElementById('date-selection-msg').textContent = `已選擇：${date}`;
-            
-            // 移除所有按鈕的 active 樣式
-            document.querySelectorAll('.calendar-day').forEach(btn => {
-                btn.classList.remove('bg-pink-600', 'text-white', 'border-pink-600');
-            });
-            // 為當前按鈕添加 active 樣式
-            element.classList.add('bg-pink-600', 'text-white', 'border-pink-600');
-            
-            // 更新時間段可用性
-            updateTimeSlotsAvailability(date);
-            
-            // 清除已選擇時間段
-            document.getElementById('selected-time-slot').value = '';
-            document.querySelectorAll('.time-slot-btn').forEach(btn => {
-                btn.classList.remove('bg-pink-600', 'text-white');
-            });
-        };
-
-        /** 更新時間段按鈕的可用性 */
-        function updateTimeSlotsAvailability(date) {
-            const timeSlotsContainer = document.getElementById('time-slots-container');
-            const timeSlotButtons = timeSlotsContainer.querySelectorAll('.time-slot-btn');
-
-            timeSlotButtons.forEach(btn => {
-                const slot = btn.dataset.slot;
-                const key = `${date}-${slot}`;
-                const isBooked = window.appointments.some(appt => appt.date === date && appt.timeSlot === slot);
+            <!-- Content 6: 管理員專屬 - 預約時刻表 (Admin only) -->
+            <div class="tab-content content-admin">
+                <h2 class="text-2xl font-bold text-red-700 mb-4 border-b pb-2">管理員專區：預約時刻表</h2>
+                <div id="admin-info" class="mb-4 hidden text-green-700 font-semibold bg-green-100 p-3 rounded-lg">您已成功登入管理員模式。</div>
                 
-                btn.disabled = isBooked;
-                btn.classList.toggle('bg-gray-300', isBooked);
-                btn.classList.toggle('text-gray-500', isBooked);
-                btn.classList.toggle('cursor-not-allowed', isBooked);
-                btn.classList.toggle('bg-white', !isBooked);
-                btn.classList.toggle('text-gray-700', !isBooked);
-            });
-        }
+                <div id="admin-schedule-list" class="space-y-4">
+                    <p class="text-gray-500">請先登入管理員以查看預約時刻表。</p>
+                </div>
+            </div>
+
+        </div>
+        <!-- End Tabs Content -->
+
+        <!-- Footer Disclaimer -->
+        <footer class="p-4 text-center bg-gray-100 text-gray-500 text-xs rounded-b-[14px] border-t border-gray-200">
+            本店擁有店內規則及活動之最終解釋權
+        </footer>
+    </div>
+
+    <!-- Firebase 腳本 -->
+    <script type="module">
+        // 載入 Firebase 模組
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, setDoc, query, where, getDocs, updateDoc, deleteDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase 配置與變數 ---
+        // 使用者提供的 Firebase Config
+        const userFirebaseConfig = {
+            apiKey: "AIzaSyCUA8l-vWhPEmhJRFvvsVw-D9SswS02Cws",
+            authDomain: "jy-beauty-booking.firebaseapp.com",
+            projectId: "jy-beauty-booking",
+            storageBucket: "jy-beauty-booking.firebasestorage.app",
+            messagingSenderId: "1002086733528",
+            appId: "1:1002086733528:web:be630f3eddc7b91acea9ad",
+            measurementId: "G-KTT19KK0NY"
+        };
+        const firebaseConfig = userFirebaseConfig; // 使用用戶提供的配置
+        const internalAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // 管理員資訊 (硬編碼)
+        const ADMIN_USER = 'a5527871028';
+        const ADMIN_PASS = 'apple5512';
         
-        /** 時間段選擇邏輯 */
-        window.selectTimeSlot = (slot, element) => {
-            if (element.disabled) return;
+        // 預約時間段
+        const TIME_SLOTS = [
+            '10:00', '12:00', '14:00', '16:00', 
+            '18:00', '20:00', '22:00', '24:00'
+        ];
 
-            document.getElementById('selected-time-slot').value = slot;
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false;
+        let isAdmin = false;
+        let loginAttempts = 0;
+        let availableSlots = {}; // 儲存可預約時段: { 'YYYY-MM-DD': ['10:00', '12:00', ...] }
+        let allBookings = []; // 儲存所有預約記錄
+
+        // Firestore 集合路徑 (使用 public 路徑讓所有使用者都能讀取 config 和 bookings)
+        const CONFIG_PATH = `artifacts/${internalAppId}/public/data/studio_config`;
+        const BOOKINGS_PATH = `artifacts/${internalAppId}/public/data/bookings`;
+
+        // --- DOM 元素 ---
+        const loginModal = document.getElementById('login-modal');
+        const loginForm = document.getElementById('login-form');
+        const loginMessage = document.getElementById('login-message');
+        const adminLoginBtn = document.getElementById('admin-login-btn');
+        const adminInfoEl = document.getElementById('admin-info');
+        const adminScheduleListEl = document.getElementById('admin-schedule-list');
+        const tabsContainerEl = document.getElementById('tabs-container');
+        const appMessageEl = document.getElementById('app-message');
+        const userInfoEl = document.getElementById('user-info');
+        
+        // Tab 1: Rules
+        const rulesDisplayEl = document.getElementById('rules-display');
+        const rulesEditEl = document.getElementById('rules-edit');
+        const rulesTextEditEl = document.getElementById('rules-text-edit');
+        const cautionsTextEditEl = document.getElementById('cautions-text-edit');
+        const saveRulesBtn = document.getElementById('save-rules-btn');
+        const editPromoBtn = document.getElementById('edit-promo-btn');
+        
+        // Tab 4: Promo
+        const promoDisplayEl = document.getElementById('promo-display');
+        const promoEditEl = document.getElementById('promo-edit');
+        const promoTextEditEl = document.getElementById('promo-text-edit');
+        const savePromoBtn = document.getElementById('save-promo-btn');
+        
+        // Tab 5: Booking Form
+        const bookingFormEl = document.getElementById('booking-form');
+        const bookingDateEl = document.getElementById('booking-date');
+        const timeSlotsEl = document.getElementById('time-slots');
+        const studentTipEl = document.getElementById('student-tip');
+        const noshowTipEl = document.getElementById('noshow-tip');
+        const modelTipEl = document.getElementById('model-tip');
+        const bookingSubmitBtn = document.getElementById('booking-submit-btn');
+
+        // --- Helper Functions ---
+
+        /**
+         * @function displayAppMessage
+         * @description 顯示應用程式級別的訊息（成功/錯誤）
+         */
+        const displayAppMessage = (message, type = 'error') => {
+            appMessageEl.textContent = message;
+            appMessageEl.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
             
-            // 移除所有時間按鈕的 active 樣式
-            document.querySelectorAll('.time-slot-btn').forEach(btn => {
-                btn.classList.remove('bg-pink-600', 'text-white');
-            });
-            // 為當前按鈕添加 active 樣式
-            element.classList.add('bg-pink-600', 'text-white');
+            if (type === 'success') {
+                appMessageEl.classList.add('bg-green-100', 'text-green-700');
+            } else {
+                appMessageEl.classList.add('bg-red-100', 'text-red-700');
+            }
+            setTimeout(() => appMessageEl.classList.add('hidden'), 5000);
         };
 
-        /** 學生身份提示框 */
-        window.toggleStudentTip = (show) => {
-            document.getElementById('student-tip').classList.toggle('hidden', !show);
-        };
-        /** 預約未到提示框 */
-        window.toggleNoShowTip = (show) => {
-            document.getElementById('noshow-tip').classList.toggle('hidden', !show);
-        };
-        /** 模特兒提示框 */
-        window.toggleModelTip = (show) => {
-            document.getElementById('model-tip').classList.toggle('hidden', !show);
+        /**
+         * @function formatDateKey
+         * @description 將 Date 物件或字串格式化為 YYYY-MM-DD
+         */
+        const formatDateKey = (date) => {
+            if (date instanceof Date) {
+                return date.toISOString().split('T')[0];
+            }
+            return date.split('T')[0]; // For input[type="date"] string
         };
 
-        /** 送出預約表單 */
-        window.submitBookingForm = async (event) => {
-            event.preventDefault();
+        /**
+         * @function renderConfigContent
+         * @description 渲染設定資料（預約須知/活動）
+         */
+        const renderConfigContent = (doc) => {
+            if (!doc.exists()) {
+                // 如果文檔不存在，則設置預設值
+                if (doc.id === 'rules') {
+                    setInitialRules(); // 設置預設規則
+                    return;
+                }
+                if (doc.id === 'promo') {
+                    setInitialPromo(); // 設置預設活動
+                    return;
+                }
+                return;
+            }
             
-            const form = event.target;
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
+            const data = doc.data();
 
-            // 再次檢查預約時段是否被搶走
-            const key = `${data.date}-${data.timeSlot}`;
-            const isBooked = window.appointments.some(appt => appt.date === data.date && appt.timeSlot === data.timeSlot);
-            
-            if (isBooked) {
-                window.showMessageModal('預約失敗', '您選擇的時段剛好被預約走囉，請重新選擇！');
-                updateTimeSlotsAvailability(data.date); // 更新 UI
+            if (doc.id === 'rules') {
+                // 處理預約須知
+                const rulesHtml = data.rulesText.split('\n').map(line => `<p class="flex items-start mb-2"><i data-lucide="check-circle" class="w-4 h-4 mr-2 mt-1 flex-shrink-0 text-red-500"></i><span>${line}</span></p>`).join('');
+                const cautionsHtml = data.cautionsText.split('\n').map(line => `<p class="flex items-start mb-2"><i data-lucide="alert-triangle" class="w-4 h-4 mr-2 mt-1 flex-shrink-0 text-yellow-500"></i><span>${line}</span></p>`).join('');
+                
+                rulesDisplayEl.innerHTML = `
+                    <div class="p-4 bg-red-50 rounded-xl border border-red-200">
+                        <h3 class="text-xl font-bold text-red-800 mb-4 border-b pb-2">店內規則</h3>
+                        <div class="text-sm">${rulesHtml}</div>
+                    </div>
+                    <div class="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                        <h3 class="text-xl font-bold text-red-800 mb-4 border-b pb-2">施作前注意</h3>
+                        <div class="text-sm">${cautionsHtml}</div>
+                    </div>
+                `;
+                rulesTextEditEl.value = data.rulesText;
+                cautionsTextEditEl.value = data.cautionsText;
+                lucide.createIcons();
+
+            } else if (doc.id === 'promo') {
+                // 處理本月活動
+                const promoHtml = data.promoText.split('\n').map(line => `<p class="flex items-start mb-2"><i data-lucide="gift" class="w-4 h-4 mr-2 mt-1 flex-shrink-0 text-orange-500"></i><span>${line}</span></p>`).join('');
+                
+                promoDisplayEl.innerHTML = `
+                    <div class="p-4 bg-orange-50 rounded-xl border border-orange-200">
+                        <h3 class="text-xl font-bold text-red-800 mb-4 border-b pb-2">活動詳情</h3>
+                        <div class="text-sm">${promoHtml}</div>
+                    </div>
+                `;
+                promoTextEditEl.value = data.promoText;
+                lucide.createIcons();
+            }
+        };
+
+        /**
+         * @function renderAdminSchedule
+         * @description 渲染管理員預約時刻表
+         */
+        const renderAdminSchedule = (bookings) => {
+            if (!isAdmin) return;
+
+            allBookings = bookings;
+            if (bookings.length === 0) {
+                adminScheduleListEl.innerHTML = '<p class="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">目前沒有任何預約記錄。</p>';
                 return;
             }
 
-            const appointmentsColRef = collection(window.db, 'artifacts', window.appId, 'public', 'data', APPOINTMENT_COLLECTION);
-            
-            try {
-                await addDoc(appointmentsColRef, {
-                    ...data,
-                    userId: window.userId,
-                    createdAt: serverTimestamp(),
-                    status: 'Pending'
-                });
-                
-                form.reset();
-                window.showMessageModal('預約成功', '您的預約已送出！我們會盡快透過 LINE 與您確認細節。');
-                renderContent('booking'); // 刷新表單，更新可用時段
-            } catch (e) {
-                console.error("Booking submission failed:", e);
-                window.showMessageModal('錯誤', '預約送出失敗，請檢查網路連線或與店家聯繫。');
-            }
-        };
-
-        /** 渲染預約時刻表 (管理員專用) */
-        function renderScheduleContent() {
-            if (!window.isAdmin) {
-                document.getElementById('tab-content').innerHTML = `<p class="text-xl text-red-500 text-center py-10">❌ 僅限管理員存取此頁面 ❌</p>`;
-                return;
-            }
-
-            if (window.appointments.length === 0) {
-                 document.getElementById('tab-content').innerHTML = `
-                    <h2 class="admin-section-title">預約時刻表</h2>
-                    <p class="text-gray-500 text-center py-10">目前沒有任何預約資料。</p>
-                 `;
-                 return;
-            }
-
-            // 按日期和時間排序
-            const sortedAppointments = [...window.appointments].sort((a, b) => {
-                const dateA = new Date(`${a.date} ${a.timeSlot}`);
-                const dateB = new Date(`${b.date} ${b.timeSlot}`);
-                return dateA - dateB;
-            });
-
-            // 按日期分組
-            const groupedAppointments = sortedAppointments.reduce((acc, appt) => {
-                (acc[appt.date] = acc[appt.date] || []).push(appt);
+            // 1. 按日期分組
+            const grouped = bookings.reduce((acc, booking) => {
+                const dateKey = formatDateKey(booking.date);
+                if (!acc[dateKey]) {
+                    acc[dateKey] = [];
+                }
+                acc[dateKey].push(booking);
                 return acc;
             }, {});
 
-            let html = `<h2 class="admin-section-title">預約時刻表 (共 ${window.appointments.length} 筆)</h2>`;
+            // 2. 渲染 HTML
+            let html = '';
+            const sortedDates = Object.keys(grouped).sort();
 
-            // 渲染表格
-            for (const date in groupedAppointments) {
-                const dailyAppointments = groupedAppointments[date];
+            sortedDates.forEach(dateKey => {
+                const dayBookings = grouped[dateKey].sort((a, b) => a.time.localeCompare(b.time));
+
                 html += `
-                    <div class="mb-8 p-4 bg-pink-50 rounded-xl shadow-lg border border-pink-100">
-                        <h3 class="text-lg font-bold text-pink-700 mb-3">${date}</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-gray-700 bg-white rounded-lg">
-                                <thead>
-                                    <tr class="text-left">
-                                        <th class="p-3 border-b-2 border-pink-200">時間</th>
-                                        <th class="p-3 border-b-2 border-pink-200">姓名</th>
-                                        <th class="p-3 border-b-2 border-pink-200">項目</th>
-                                        <th class="p-3 border-b-2 border-pink-200">學生/未到/模特</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${dailyAppointments.map(appt => `
-                                        <tr class="hover:bg-pink-50 transition-colors">
-                                            <td class="p-3 border-b border-pink-100 font-semibold">${appt.timeSlot}</td>
-                                            <td class="p-3 border-b border-pink-100">${appt.name}</td>
-                                            <td class="p-3 border-b border-pink-100 text-pink-600">${appt.service}</td>
-                                            <td class="p-3 border-b border-pink-100 text-xs">
-                                                ${appt.isStudent === '是' ? '<span class="bg-yellow-100 text-yellow-800 p-1 rounded">學生</span>' : ''}
-                                                ${appt.didNoShow === '是' ? '<span class="bg-red-100 text-red-800 p-1 rounded ml-1">曾未到</span>' : ''}
-                                                ${appt.isModel === '是' ? '<span class="bg-blue-100 text-blue-800 p-1 rounded ml-1">模特兒</span>' : ''}
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 shadow-sm">
+                        <h3 class="text-lg font-bold text-red-700 border-b pb-2 mb-3">${dateKey} (星期${new Date(dateKey).getDay() === 0 ? '日' : new Date(dateKey).getDay()})</h3>
+                        <ul class="space-y-3">
                 `;
-            }
-
-            document.getElementById('tab-content').innerHTML = html;
-        }
-
-        // --- Tab Control ---
-
-        /** 切換分頁邏輯 */
-        window.changeTab = (tabName) => {
-            window.activeTab = tabName;
-
-            // 更新按鈕樣式
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.tab === tabName) {
-                    btn.classList.add('active');
-                }
+                dayBookings.forEach(b => {
+                    html += `
+                        <li class="p-3 bg-white border border-gray-100 rounded-md text-sm">
+                            <p class="font-semibold text-gray-800">${b.time} - ${b.name}</p>
+                            <p class="text-xs text-gray-600">
+                                項目: ${b.service} | 學生: ${b.isStudent} | 未到: ${b.isNoshow} | 模特: ${b.isModel}
+                            </p>
+                        </li>
+                    `;
+                });
+                html += `</ul></div>`;
             });
 
-            // 渲染內容
-            switch (tabName) {
-                case 'rules':
-                    renderRulesContent();
-                    break;
-                case 'prices':
-                    renderPricesContent();
-                    break;
-                case 'qa':
-                    renderQAContent();
-                    break;
-                case 'events':
-                    renderEventsContent();
-                    break;
-                case 'booking':
-                    renderBookingForm();
-                    break;
-                case 'schedule':
-                    renderScheduleContent();
-                    break;
-                default:
-                    document.getElementById('tab-content').innerHTML = '<p class="text-center text-gray-500 py-10">內容載入錯誤。</p>';
+            adminScheduleListEl.innerHTML = html;
+            updateTimeSlots(); // 更新預約表單的時段
+        };
+
+        /**
+         * @function updateTimeSlots
+         * @description 根據現有預約更新預約表單的時間段。
+         */
+        const updateTimeSlots = () => {
+            const selectedDateStr = bookingDateEl.value;
+            timeSlotsEl.innerHTML = '';
+            
+            if (!selectedDateStr) {
+                timeSlotsEl.innerHTML = '<p class="text-sm text-gray-500">請在上方選擇日期。</p>';
+                return;
+            }
+
+            const selectedDate = new Date(selectedDateStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (selectedDate < today) {
+                timeSlotsEl.innerHTML = '<p class="text-sm text-red-500">無法預約過去的日期。</p>';
+                return;
+            }
+
+            // 計算當天已預約的時段
+            const bookedSlots = allBookings
+                .filter(b => formatDateKey(b.date) === selectedDateStr)
+                .map(b => b.time);
+            
+            // 生成時間段按鈕
+            TIME_SLOTS.forEach(time => {
+                const isBooked = bookedSlots.includes(time);
+                const buttonClass = isBooked 
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-red-500 hover:bg-red-600 text-white cursor-pointer';
+                
+                timeSlotsEl.innerHTML += `
+                    <label class="time-slot-label">
+                        <input type="radio" name="booking-time" value="${time}" class="hidden" ${isBooked ? 'disabled' : ''} required>
+                        <span class="inline-block px-3 py-1 text-sm font-semibold rounded-full transition duration-150 ${buttonClass}"
+                              onclick="document.getElementById('booking-time-${time}').checked=true; document.getElementById('booking-time-${time}').click();">
+                            ${time}
+                        </span>
+                    </label>
+                `;
+            });
+
+            // 如果所有時段都滿了
+            if (bookedSlots.length === TIME_SLOTS.length) {
+                timeSlotsEl.innerHTML = '<p class="text-sm text-red-500 font-semibold">該日期所有時段已滿，請選擇其他日期。</p>';
             }
         };
 
-        // 啟動應用
-        document.addEventListener('DOMContentLoaded', () => {
-            initFirebase();
+        // --- Firebase Init & Auth ---
+
+        /**
+         * @function setupFirebase
+         * @description 初始化 Firebase 應用程式並處理認證。
+         */
+        const setupFirebase = async () => {
+            try {
+                // setLogLevel('debug'); // 開啟 Firebase 偵錯日誌
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // 處理認證 (使用 Canvas 提供的 Token 或匿名登入)
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // 監聽認證狀態變化
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userInfoEl.textContent = `使用者 ID: ${userId}`;
+                        isAuthReady = true;
+                        // 認證完成後，啟動資料監聽
+                        listenForConfig();
+                        listenForBookings();
+                    } else {
+                        userId = null;
+                        userInfoEl.textContent = '使用者 ID: 未登入 (匿名)';
+                        isAuthReady = true; 
+                    }
+                    // 確保 Lucide Icons 在內容載入後創建
+                    lucide.createIcons();
+                });
+
+            } catch (e) {
+                displayAppMessage(`Firebase 初始化失敗: ${e.message}`);
+            }
+        };
+        
+        // --- Firestore Listeners ---
+
+        /**
+         * @function listenForConfig
+         * @description 監聽管理員可編輯的設定內容。
+         */
+        const listenForConfig = () => {
+            if (!isAuthReady) return;
+            const configRef = collection(db, CONFIG_PATH);
+            
+            onSnapshot(configRef, (snapshot) => {
+                snapshot.forEach(doc => {
+                    renderConfigContent(doc);
+                });
+            }, (error) => {
+                displayAppMessage(`設定資料監聽失敗: ${error.message}`);
+            });
+        };
+        
+        /**
+         * @function listenForBookings
+         * @description 監聽預約資料。
+         */
+        const listenForBookings = () => {
+            if (!isAuthReady) return;
+            const bookingsRef = collection(db, BOOKINGS_PATH);
+
+            // 由於 Firestore 限制，不在 onSnapshot 內使用 orderBy。
+            const q = bookingsRef;
+
+            onSnapshot(q, (snapshot) => {
+                const bookings = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const date = data.date?.toDate ? data.date.toDate() : new Date(data.date);
+                    // 僅保留未來的預約，但為簡單管理員展示，先保留所有
+                    bookings.push({
+                        id: doc.id,
+                        name: data.name,
+                        service: data.service,
+                        date: date,
+                        time: data.time,
+                        isStudent: data.isStudent,
+                        isNoshow: data.isNoshow,
+                        isModel: data.isModel
+                    });
+                });
+
+                // 在客戶端進行排序 (先按日期，再按時間)
+                bookings.sort((a, b) => {
+                    const dateA = formatDateKey(a.date) + a.time;
+                    const dateB = formatDateKey(b.date) + b.time;
+                    return dateA.localeCompare(dateB);
+                });
+
+                renderAdminSchedule(bookings);
+                updateTimeSlots();
+            }, (error) => {
+                displayAppMessage(`預約資料監聽失敗: ${error.message}`);
+            });
+        };
+
+        // --- Content Default Setters ---
+
+        const setInitialRules = async () => {
+            const defaultRulesText = `限生理女、男賓止步
+日間半預約制
+日間時段：10～17點；夜間時段：18～3點
+預約日間不用訂金，但有未到紀錄，下次預約須先匯款訂金（為預約項目總價1/2之金額）
+預約夜間皆需先付款訂金（為預約項目總價1/2之金額）
+遲到15分鐘以上，未先訊息告知即視為未到，並取消預約
+取消預約至少提前三天，如有匯款訂金方可全額退還
+因合作空間，施作空間為布簾隔斷隔音，雖除毛師人都會在，但介意勿約
+美容空間無法攜帶食物及寵物`;
+            
+            const defaultCautionsText = `施作日前請停用酸類產品、停止去角質至少一週，避免肌膚過敏或刺激
+毛髮長度需至少 0.5 至 1 公分，請勿自行修剪，以免影響除毛效果
+避開生理期前 5 天到後 3 天
+若有規劃出遊，建議提前3～5天安排除毛時間，讓肌膚有足夠的時間恢復，避免在出遊前一兩天才除毛
+除毛前後請勤勞密集保濕，除毛時有脫皮、泛紅、紅點屬正常現象，請注意產品不能含酸、也沒有美白功能`;
+
+            try {
+                // 嘗試寫入預設值
+                await setDoc(doc(db, CONFIG_PATH, 'rules'), {
+                    rulesText: defaultRulesText,
+                    cautionsText: defaultCautionsText,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            } catch (e) {
+                console.error("無法設置預設規則:", e);
+            }
+        };
+
+        const setInitialPromo = async () => {
+            const defaultPromoText = `整個月都享有開幕價
+學生價活動過後不會消失
+分享LINE官方給好友，一起加好友兩人都能拿到優惠劵，一人最高可拿五張，每次可使用1張
+追蹤IG、加LINE官方、Google評論五顆星並留言，經定額折扣完，消費總額再打九折`;
+            
+            try {
+                // 嘗試寫入預設值
+                await setDoc(doc(db, CONFIG_PATH, 'promo'), {
+                    promoText: defaultPromoText,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            } catch (e) {
+                console.error("無法設置預設活動:", e);
+            }
+        };
+
+        // --- Event Handlers ---
+
+        // 1. Admin Login Logic
+        adminLoginBtn.addEventListener('click', () => {
+            if (isAdmin) {
+                // 如果已登入，執行登出操作
+                isAdmin = false;
+                loginAttempts = 0;
+                document.body.classList.remove('is-admin');
+                adminInfoEl.classList.add('hidden');
+                editPromoBtn.classList.add('hidden');
+                saveRulesBtn.classList.add('hidden'); // 隱藏編輯和儲存按鈕
+                rulesEditEl.classList.add('hidden');
+                promoEditEl.classList.add('hidden');
+                document.getElementById('admin-login-btn').innerHTML = '<i data-lucide="bell" class="w-5 h-5"></i>';
+                displayAppMessage('已登出管理員模式。', 'success');
+            } else {
+                loginModal.classList.remove('hidden');
+                loginModal.classList.add('flex');
+            }
         });
+        document.getElementById('login-cancel').addEventListener('click', () => {
+            loginModal.classList.remove('flex');
+            loginModal.classList.add('hidden');
+            loginForm.reset();
+            loginAttempts = 0; // 取消登入也重置嘗試次數
+            loginMessage.classList.add('hidden');
+        });
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = document.getElementById('admin-user').value;
+            const pass = document.getElementById('admin-pass').value;
+            
+            if (user === ADMIN_USER && pass === ADMIN_PASS) {
+                isAdmin = true;
+                loginAttempts = 0;
+                loginModal.classList.remove('flex');
+                loginModal.classList.add('hidden');
+                document.body.classList.add('is-admin');
+                adminInfoEl.classList.remove('hidden');
+                editPromoBtn.classList.remove('hidden');
+                document.getElementById('tab-admin').checked = true; // 切換到管理員分頁
+                document.getElementById('admin-login-btn').innerHTML = '<i data-lucide="log-out" class="w-5 h-5"></i>'; // 變成登出圖示
+                displayAppMessage('管理員登入成功！', 'success');
+            } else {
+                loginAttempts++;
+                if (loginAttempts >= 3) {
+                    loginMessage.textContent = '登入失敗次數過多，請稍後再試。';
+                    loginModal.classList.remove('flex');
+                    loginModal.classList.add('hidden');
+                    loginAttempts = 0;
+                } else {
+                    loginMessage.textContent = '請確定帳密或與管理員聯繫';
+                    loginMessage.classList.remove('hidden');
+                }
+            }
+            loginForm.reset();
+        });
+        
+        // 2. Admin Editing Toggles
+        document.getElementById('tab-rules').addEventListener('change', () => {
+            if (isAdmin) {
+                // 當切換到規則分頁時，顯示儲存按鈕
+                saveRulesBtn.classList.remove('hidden');
+            }
+        });
+        document.getElementById('tab-promo').addEventListener('change', () => {
+            if (isAdmin) {
+                // 當切換到活動分頁時，顯示編輯按鈕
+                editPromoBtn.classList.remove('hidden');
+            }
+        });
+
+        // 3. Admin Save Content
+        saveRulesBtn.addEventListener('click', async () => {
+            if (!isAdmin) return;
+            const rulesText = rulesTextEditEl.value;
+            const cautionsText = cautionsTextEditEl.value;
+
+            try {
+                await updateDoc(doc(db, CONFIG_PATH, 'rules'), {
+                    rulesText: rulesText,
+                    cautionsText: cautionsText,
+                    updatedAt: serverTimestamp()
+                });
+                displayAppMessage('預約須知已儲存。', 'success');
+                // 切換回顯示模式
+                rulesEditEl.classList.add('hidden');
+            } catch (e) {
+                displayAppMessage(`儲存預約須知失敗: ${e.message}`);
+            }
+        });
+        
+        // 編輯活動按鈕點擊
+        editPromoBtn.addEventListener('click', () => {
+            if (isAdmin) {
+                promoEditEl.classList.toggle('hidden');
+                editPromoBtn.textContent = promoEditEl.classList.contains('hidden') ? '編輯' : '取消編輯';
+            }
+        });
+
+        savePromoBtn.addEventListener('click', async () => {
+            if (!isAdmin) return;
+            const promoText = promoTextEditEl.value;
+            try {
+                await updateDoc(doc(db, CONFIG_PATH, 'promo'), {
+                    promoText: promoText,
+                    updatedAt: serverTimestamp()
+                });
+                displayAppMessage('本月活動已儲存。', 'success');
+                // 切換回顯示模式
+                promoEditEl.classList.add('hidden');
+                editPromoBtn.textContent = '編輯';
+            } catch (e) {
+                displayAppMessage(`儲存本月活動失敗: ${e.message}`);
+            }
+        });
+
+        // 4. Booking Form Interactivity (Tips & Date Picker)
+        document.querySelector('input[name="is-student"]').addEventListener('change', (e) => {
+            studentTipEl.classList.toggle('hidden', e.target.value !== '是');
+        });
+        document.querySelector('input[name="is-noshow"]').addEventListener('change', (e) => {
+            noshowTipEl.classList.toggle('hidden', e.target.value !== '是');
+        });
+        document.querySelector('input[name="is-model"]').addEventListener('change', (e) => {
+            modelTipEl.classList.toggle('hidden', e.target.value !== '是');
+        });
+        
+        // 5. Date Change (Triggers time slot update)
+        bookingDateEl.addEventListener('change', updateTimeSlots);
+
+        // 6. Booking Form Submission
+        bookingFormEl.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            bookingSubmitBtn.disabled = true;
+            const originalText = bookingSubmitBtn.textContent;
+            bookingSubmitBtn.textContent = "送出中...";
+
+            const dateInput = bookingDateEl.value;
+            const timeSlot = document.querySelector('input[name="booking-time"]:checked')?.value;
+            
+            if (!dateInput || !timeSlot) {
+                displayAppMessage("請確實選擇預約日期及時間段。");
+                bookingSubmitBtn.disabled = false;
+                bookingSubmitBtn.textContent = originalText;
+                return;
+            }
+            
+            // 檢查該時段是否已被預約（雙重檢查）
+            const isBooked = allBookings.some(b => 
+                formatDateKey(b.date) === dateInput && b.time === timeSlot
+            );
+            
+            if (isBooked) {
+                displayAppMessage("您選擇的時段剛才已被預約，請重新選擇！");
+                updateTimeSlots();
+                bookingSubmitBtn.disabled = false;
+                bookingSubmitBtn.textContent = originalText;
+                return;
+            }
+
+            // 組裝資料
+            const bookingData = {
+                name: document.getElementById('booking-name').value.trim(),
+                service: document.getElementById('booking-service').value,
+                date: new Date(dateInput), // 儲存為 Firestore Timestamp
+                time: timeSlot,
+                isStudent: document.querySelector('input[name="is-student"]:checked').value,
+                isNoshow: document.querySelector('input[name="is-noshow"]:checked').value,
+                isModel: document.querySelector('input[name="is-model"]:checked').value,
+                createdAt: serverTimestamp()
+            };
+
+            try {
+                await addDoc(collection(db, BOOKINGS_PATH), bookingData);
+                
+                displayAppMessage('預約送出成功！請等待 LINE 官方人員確認。', 'success');
+                bookingFormEl.reset(); // 重置表單
+                updateTimeSlots(); // 刷新時段顯示
+            } catch (e) {
+                displayAppMessage(`送出預約失敗: ${e.message}`);
+            } finally {
+                bookingSubmitBtn.disabled = false;
+                bookingSubmitBtn.textContent = originalText;
+            }
+        });
+
+        // --- Initialization ---
+        
+        // 設定日期選擇器只能選今天或未來
+        const todayKey = formatDateKey(new Date());
+        bookingDateEl.setAttribute('min', todayKey);
+
+
+        setupFirebase();
+
     </script>
 </body>
 </html>
