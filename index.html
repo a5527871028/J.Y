@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from "firebase/app";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "firebase/auth";
 import { 
   getFirestore, 
   collection, 
@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 
 // --- Firebase Configuration ---
-const firebaseConfig = {
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
   apiKey: "AIzaSyCUA8l-vWhPEmhJRFvvsVw-D9SswS02Cws",
   authDomain: "jy-beauty-booking.firebaseapp.com",
   projectId: "jy-beauty-booking",
@@ -47,8 +47,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-// Use a fixed App ID for public data path consistency
-const APP_ID = "jy-beauty-studio-v1";
+
+// Use environment app ID if available, otherwise fallback
+const APP_ID = typeof __app_id !== 'undefined' ? __app_id : "jy-beauty-studio-v1";
 
 // --- Default Content (Fallback) ---
 const DEFAULT_RULES = `店內規則
@@ -198,49 +199,63 @@ export default function JyBeautyApp() {
 
   // --- Firebase Effects ---
 
-  // 1. Auth Init
+  // 1. Auth Init (Robust Pattern)
   useEffect(() => {
     const initAuth = async () => {
       try {
-        await signInAnonymously(auth);
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
       } catch (error) {
         console.error("Auth Error", error);
+        if (error.code === 'auth/configuration-not-found' || error.code === 'auth/admin-restricted-operation') {
+            alert("Firebase 設定提醒：\n您的專案尚未啟用「匿名登入」功能。\n請至 Firebase Console > Authentication > Sign-in method 開啟「Anonymous (匿名)」登入功能。");
+        }
       }
     };
     initAuth();
+    
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
 
-  // 2. Fetch Content (Rules & Promo)
+  // 2. Fetch Content (Rules & Promo) - Guard with user
   useEffect(() => {
     if (!user) return;
-    const contentRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'site_content');
+    // FIX: Path must have even segments. Added 'main' as docId inside 'site_content' collection.
+    const contentRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'site_content', 'main');
+    
     const unsubscribe = onSnapshot(contentRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.rules) setRulesContent(data.rules);
-        if (data.promo) setPromoContent(data.promo);
+        // FIX: Ensure content is string to prevent "Objects are not valid as React child" error
+        if (data.rules) setRulesContent(String(data.rules));
+        if (data.promo) setPromoContent(String(data.promo));
       }
-    }, (error) => console.error("Content Fetch Error", error));
+    }, (error) => {
+        console.error("Content Fetch Error", error);
+    });
     return () => unsubscribe();
   }, [user]);
 
-  // 3. Fetch Bookings (For availability check & Admin view)
+  // 3. Fetch Bookings (For availability check & Admin view) - Guard with user
   useEffect(() => {
     if (!user) return;
-    // For simplicity, we fetch all bookings to check collisions client-side 
-    // In a large app, you'd query by date range
     const bookingsRef = collection(db, 'artifacts', APP_ID, 'public', 'data', 'bookings');
+    
     const unsubscribe = onSnapshot(bookingsRef, (snapshot) => {
       const loadedBookings = [];
       snapshot.forEach(doc => {
         loadedBookings.push({ id: doc.id, ...doc.data() });
       });
       setBookings(loadedBookings);
-    }, (error) => console.error("Booking Fetch Error", error));
+    }, (error) => {
+        console.error("Booking Fetch Error", error);
+    });
     return () => unsubscribe();
   }, [user]);
 
@@ -249,14 +264,16 @@ export default function JyBeautyApp() {
   const handleContentSave = async () => {
     if (!user || !isAdmin) return;
     try {
-      const contentRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'site_content');
+      // FIX: Path must have even segments.
+      const contentRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'site_content', 'main');
       await setDoc(contentRef, {
         rules: rulesContent,
         promo: promoContent
       }, { merge: true });
       alert("內容已更新！");
     } catch (e) {
-      alert("儲存失敗，請重試");
+      console.error(e);
+      alert("儲存失敗，請檢查網路或權限");
     }
   };
 
@@ -266,6 +283,10 @@ export default function JyBeautyApp() {
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
+    if (!user) {
+        alert("系統連線中，請稍後再試（若持續失敗請檢查 Firebase 設定）");
+        return;
+    }
     if (!formData.date || !formData.timeSlot || !formData.name) {
       alert("請填寫完整資訊");
       return;
@@ -276,6 +297,7 @@ export default function JyBeautyApp() {
       const bookingsRef = collection(db, 'artifacts', APP_ID, 'public', 'data', 'bookings');
       await addDoc(bookingsRef, {
         ...formData,
+        userId: user.uid, // Record who made the booking
         createdAt: serverTimestamp()
       });
       setFormSuccess(true);
@@ -290,7 +312,7 @@ export default function JyBeautyApp() {
       });
       setTimeout(() => setFormSuccess(false), 3000);
     } catch (error) {
-      alert("預約失敗，請稍後再試");
+      alert("預約失敗：" + error.message);
       console.error(error);
     } finally {
       setFormSubmitting(false);
@@ -631,7 +653,11 @@ export default function JyBeautyApp() {
                             </thead>
                             <tbody>
                                 {[...bookings]
-                                  .sort((a,b) => new Date(a.date + 'T' + a.timeSlot) - new Date(b.date + 'T' + b.timeSlot))
+                                  .sort((a,b) => {
+                                      // FIX: Guard against missing dates
+                                      if (!a.date || !b.date) return 0;
+                                      return new Date(a.date + 'T' + a.timeSlot) - new Date(b.date + 'T' + b.timeSlot);
+                                  })
                                   .map((b) => (
                                     <tr key={b.id} className="border-b hover:bg-gray-50">
                                         <td className="p-3">{b.date}</td>
