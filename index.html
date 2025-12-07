@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>九翊美學 × J.Y Beauty Studio</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 Noto Sans TC 字體 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- 載入 Font Awesome 圖標 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- 載入 Calendar.js 簡化版 (單日選取) -->
+    <!-- 為了滿足日曆選擇器需求，我們將內嵌一個簡單的日曆元件邏輯 -->
+    
+    <style>
+        :root {
+            --primary: #be123c; /* Rose-700, 主紅色 */
+            --secondary: #fb7185; /* Rose-400, 次要粉色 */
+            --accent: #fcd34d; /* Amber-300, 金色/聖誕色 */
+        }
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #fdf2f0; /* 非常淡的粉膚色背景 */
+            color: #5e4b4b;
+            min-height: 100vh;
+            min-height: 100dvh; /* 確保在手機內建瀏覽器中完美填滿畫面 */
+            display: flex;
+            justify-content: center;
+        }
+
+        /* 聖誕主題背景裝飾 - 暖色幾何 */
+        .geo-bg {
+            position: fixed;
+            z-index: -1;
+            border-radius: 50%;
+            filter: blur(50px);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .geo-1 { width: 350px; height: 350px; top: -80px; left: -80px; background: #fecdd3; animation: float1 15s infinite ease-in-out; } 
+        .geo-2 { width: 300px; height: 300px; bottom: 5%; right: -50px; background: #fed7aa; animation: float2 20s infinite ease-in-out; }
+        .geo-3 { width: 200px; height: 200px; top: 30%; left: 10%; background: #fff1f2; animation: float3 18s infinite ease-in-out; }
+
+        @keyframes float1 { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-20px) rotate(10deg); } }
+        @keyframes float2 { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(30px) rotate(-15deg); } }
+        @keyframes float3 { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+        /* 隱藏捲軸但保留功能 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 分頁切換動畫 */
+        .tab-content { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 表格樣式優化 */
+        .price-table th {
+            font-weight: 700;
+            color: var(--primary);
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--secondary);
+            font-size: 0.8rem;
+        }
+        .price-table td {
+            padding: 10px 4px;
+            border-bottom: 1px dashed #fecdd3;
+        }
+        .price-table tr:last-child td {
+            border-bottom: none;
+        }
+        .price-table .price-original {
+            color: #9ca3af; /* Gray-400 */
+            text-decoration: line-through;
+            font-size: 0.85rem;
+        }
+        .price-table .price-highlight {
+            color: var(--primary);
+            font-weight: 700;
+        }
+        .price-table .price-student {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* 按鈕基本樣式 */
+        .action-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 彈出視窗動畫 */
+        .modal {
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            transform: scale(0.9);
+        }
+        .modal.open .modal-content {
+            transform: scale(1);
+        }
+
+        /* 日曆樣式 */
+        .calendar-day {
+            width: 14.28%; /* 7 days per week */
+            aspect-ratio: 1 / 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .calendar-day.current-month {
+            background-color: #ffe4e6; /* Rose-100 */
+        }
+        .calendar-day.current-month:hover {
+            background-color: #fca5a5; /* Rose-400 */
+        }
+        .calendar-day.selected {
+            background-color: var(--primary);
+            color: white;
+            font-weight: bold;
+        }
+        .calendar-day.disabled {
+            background-color: #f9fafb;
+            color: #d1d5db;
+            cursor: not-allowed;
+        }
+
+        /* 時間段按鈕 */
+        .time-slot {
+            padding: 8px 12px;
+            border-radius: 0.5rem;
+            border: 1px solid #fecdd3;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .time-slot.available:hover {
+            background-color: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+        .time-slot.selected {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 2px 4px rgba(190, 18, 60, 0.4);
+        }
+        .time-slot.booked {
+            background-color: #fecaca; /* Red-200 */
+            color: #be123c;
+            cursor: not-allowed;
+            opacity: 0.7;
+            text-decoration: line-through;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 背景幾何圖形 -->
+    <div class="geo-bg geo-1"></div>
+    <div class="geo-bg geo-2"></div>
+    <div class="geo-bg geo-3"></div>
+
+    <!-- 主卡片容器 -->
+    <div id="app-container" class="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-2xl flex flex-col relative min-h-[100dvh] overflow-hidden">
+        
+        <!-- 頂部 Header -->
+        <header class="pt-10 pb-6 px-6 text-center bg-gradient-to-b from-white to-transparent relative z-10">
+            <!-- 管理員登入按鈕 -->
+            <button id="admin-login-btn" onclick="openLoginModal()" class="absolute top-4 right-4 text-xs font-medium text-gray-500 hover:text-rose-700 transition flex items-center">
+                <i class="fas fa-user-lock mr-1"></i> 管理員登入
+            </button>
+            <span id="admin-logout-btn" onclick="logoutAdmin()" class="hidden absolute top-4 right-4 text-xs font-medium text-rose-700 hover:text-gray-500 transition cursor-pointer flex items-center">
+                <i class="fas fa-sign-out-alt mr-1"></i> 登出
+            </span>
+
+            <h1 class="text-2xl font-bold tracking-widest text-rose-900 mb-1">九翊美學</h1>
+            <p class="text-sm tracking-widest text-rose-700 font-medium mb-4">× J.Y Beauty Studio ×</p>
+            
+            <!-- 社群按鈕區 -->
+            <div class="flex justify-center items-center gap-4 mb-3">
+                <!-- IG 按鈕 -->
+                <a href="https://www.instagram.com/jystudio_1210?igsh=MWQ3czM4bHRqd2FmZw==" target="_blank" rel="noopener noreferrer"
+                   class="action-btn bg-gradient-to-tr from-[#feda75] via-[#fa7e1e] to-[#d62976] text-white text-sm">
+                    <i class="fab fa-instagram text-lg"></i>
+                    Instagram
+                </a>
+                
+                <!-- LINE 按鈕 -->
+                <a href="https://lin.ee/gRA18AK" target="_blank" rel="noopener noreferrer"
+                   class="action-btn bg-[#06C755] text-white text-sm">
+                    <i class="fab fa-line text-lg"></i>
+                    預約諮詢
+                </a>
+            </div>
+
+            <div class="flex justify-center items-center text-gray-500 text-xs font-medium mt-2">
+                <i class="fas fa-map-marker-alt mr-1 text-rose-400"></i> 台南 永康區
+            </div>
+        </header>
+
+        <!-- 分頁導覽列 (Sticky) -->
+        <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur shadow-md px-2">
+            <ul id="tab-list" class="flex justify-between items-center text-sm font-medium text-gray-500 overflow-x-auto no-scrollbar">
+                <!-- Tab 1: 預約須知 -->
+                <li class="flex-shrink-0 text-center py-4 px-3 cursor-pointer hover:text-rose-600 transition border-b-2 border-transparent hover:border-rose-300 tab-btn active-tab text-rose-700 border-rose-500" data-tab="rules" onclick="switchTab('rules', this)">
+                    預約須知
+                </li>
+                <!-- Tab 2: 價目表 -->
+                <li class="flex-shrink-0 text-center py-4 px-3 cursor-pointer hover:text-rose-600 transition border-b-2 border-transparent hover:border-rose-300 tab-btn" data-tab="prices" onclick="switchTab('prices', this)">
+                    價目表
+                </li>
+                <!-- Tab 3: Q&A -->
+                <li class="flex-shrink-0 text-center py-4 px-3 cursor-pointer hover:text-rose-600 transition border-b-2 border-transparent hover:border-rose-300 tab-btn" data-tab="qa" onclick="switchTab('qa', this)">
+                    Q&A
+                </li>
+                <!-- Tab 4: 本月活動 -->
+                <li class="flex-shrink-0 text-center py-4 px-3 cursor-pointer hover:text-rose-600 transition border-b-2 border-transparent hover:border-rose-300 tab-btn" data-tab="events" onclick="switchTab('events', this)">
+                    本月活動
+                </li>
+                <!-- Tab 5: 預約表單 -->
+                <li class="flex-shrink-0 text-center py-4 px-3 cursor-pointer hover:text-rose-600 transition border-b-2 border-transparent hover:border-rose-300 tab-btn" data-tab="booking" onclick="switchTab('booking', this)">
+                    預約表單
+                </li>
+                <!-- Tab 6: 管理員專用 (預約時刻表) -->
+                <li id="admin-tab" class="hidden flex-shrink-0 text-center py-4 px-3 cursor-pointer hover:text-rose-600 transition border-b-2 border-transparent hover:border-rose-300 tab-btn" data-tab="schedule" onclick="switchTab('schedule', this)">
+                    <i class="fas fa-calendar-check mr-1"></i>時刻表
+                </li>
+            </ul>
+        </nav>
+
+        <!-- 內容區域 -->
+        <main class="flex-1 p-6 overflow-y-auto no-scrollbar pb-24">
+
+            <!-- 1. 預約須知 (可編輯) -->
+            <div id="rules" class="tab-content active">
+                <div id="rules-display">
+                    <!-- 預約須知內容將由 JS 載入 -->
+                </div>
+                <!-- 管理員編輯區塊 -->
+                <div id="rules-edit" class="hidden mt-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h3 class="text-lg font-bold text-rose-700 mb-3">編輯預約須知</h3>
+                    <textarea id="rules-textarea" class="w-full h-64 p-3 border rounded-lg focus:ring-rose-500 focus:border-rose-500" placeholder="在此輸入預約須知內容 (Markdown 格式)"></textarea>
+                    <button onclick="saveRules()" class="mt-3 w-full action-btn bg-rose-500 text-white">儲存變更</button>
+                </div>
+            </div>
+
+            <!-- 2. 價目表 -->
+            <div id="prices" class="tab-content">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-extrabold text-rose-900 drop-shadow-sm">熱蠟除毛</h2>
+                    <p class="text-sm text-rose-400 tracking-wider font-medium mt-1"><i class="fas fa-heart text-xs mr-1"></i> Italwax 義朵熱蠟</p>
+                </div>
+
+                <div class="space-y-6">
+                    
+                    <!-- 私密處 -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xl border-t-8 border-rose-300/80">
+                        <h4 class="font-bold text-xl text-rose-800 mb-4 flex justify-between items-end">
+                            <span><i class="fas fa-venus-mars mr-2 text-rose-500"></i>私密處</span>
+                            <span class="text-xs text-gray-500 font-normal">NTD / 元</span>
+                        </h4>
+                        <table class="w-full text-sm text-center price-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left w-1/3">項目</th>
+                                    <th>原價</th>
+                                    <th>開幕價</th>
+                                    <th>學生價</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <tr>
+                                    <td class="text-left font-medium">比基尼除毛</td>
+                                    <td class="price-original">1000</td>
+                                    <td class="price-highlight">899</td>
+                                    <td class="price-student">799</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-left font-medium">巴西式全除</td>
+                                    <td class="price-original">1500</td>
+                                    <td class="price-highlight">1299</td>
+                                    <td class="price-student">999</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 手部 -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xl border-t-8 border-rose-300/80">
+                        <h4 class="font-bold text-xl text-rose-800 mb-4 flex items-center">
+                            <i class="fas fa-hand-paper mr-2 text-rose-500"></i>手部
+                        </h4>
+                        <table class="w-full text-sm text-center price-table">
+                            <!-- ... (表格結構同上) ... -->
+                            <thead>
+                                <tr>
+                                    <th class="text-left w-1/3">項目</th>
+                                    <th>原價</th>
+                                    <th>開幕價</th>
+                                    <th>學生價</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <tr>
+                                    <td class="text-left font-medium">腋下</td>
+                                    <td class="price-original">600</td>
+                                    <td class="price-highlight">499</td>
+                                    <td class="price-student">399</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-left font-medium">上/下手臂</td>
+                                    <td class="price-original">800</td>
+                                    <td class="price-highlight">699</td>
+                                    <td class="price-student">499</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-left font-medium">全手臂</td>
+                                    <td class="price-original">1200</td>
+                                    <td class="price-highlight">1099</td>
+                                    <td class="price-student">899</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-left font-medium">手指</td>
+                                    <td class="price-original">400</td>
+                                    <td class="price-highlight">299</td>
+                                    <td class="price-student">199</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 腿部 -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xl border-t-8 border-rose-300/80">
+                        <h4 class="font-bold text-xl text-rose-800 mb-4 flex items-center">
+                            <i class="fas fa-walking mr-2 text-rose-500"></i>腿部
+                        </h4>
+                        <table class="w-full text-sm text-center price-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left w-1/3">項目</th>
+                                    <th>原價</th>
+                                    <th>開幕價</th>
+                                    <th>學生價</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <tr>
+                                    <td class="text-left font-medium">小腿</td>
+                                    <td class="price-original">1000</td>
+                                    <td class="price-highlight">899</td>
+                                    <td class="price-student">699</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-left font-medium">大腿</td>
+                                    <td class="price-original">1200</td>
+                                    <td class="price-highlight">1099</td>
+                                    <td class="price-student">799</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-left font-medium">全腿</td>
+                                    <td class="price-original">1600</td>
+                                    <td class="price-highlight">1399</td>
+                                    <td class="price-student">1099</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-left font-medium">膝蓋</td>
+                                    <td class="price-original">400</td>
+                                    <td class="price-highlight">199</td>
+                                    <td class="price-student">150</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 其他 -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xl border-t-8 border-rose-300/80">
+                        <h4 class="font-bold text-xl text-rose-800 mb-4 flex items-center">
+                            <i class="fas fa-spa mr-2 text-rose-500"></i>其他部位
+                        </h4>
+                        <table class="w-full text-sm text-center price-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left w-1/3">項目</th>
+                                    <th>原價</th>
+                                    <th>開幕價</th>
+                                    <th>學生價</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <tr>
+                                    <td class="text-left font-medium">肚子</td>
+                                    <td class="price-original">1300</td>
+                                    <td class="price-highlight">1099</td>
+                                    <td class="price-student">799</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-left font-medium">上/下背</td>
+                                    <td class="price-original">900</td>
+                                    <td class="price-highlight">699</td>
+                                    <td class="price-student">599</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-left font-medium">全背</td>
+                                    <td class="price-original">1400</td>
+                                    <td class="price-highlight">1099</td>
+                                    <td class="price-student">899</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 備註 -->
+                    <div class="text-xs text-gray-600 bg-rose-50/80 p-4 rounded-xl border border-rose-100 shadow-inner">
+                        <p class="mb-2 font-bold text-rose-700"><i class="fas fa-star mr-1 text-accent"></i> 優惠須知：</p>
+                        <ul class="list-disc pl-5 space-y-1 marker:text-rose-400">
+                            <li>開幕價僅限開幕體驗月，活動結束恢復原價。</li>
+                            <li>開幕價及學生價符合資格者擇一參加。</li>
+                            <li>學生須出示實體卡並加入官方 LINE，可參加開幕月折上折活動。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Q&A -->
+            <div id="qa" class="tab-content">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-extrabold text-rose-900 drop-shadow-sm">常見問題 Q&A</h2>
+                    <p class="text-sm text-rose-400 tracking-wider font-medium mt-1">解答您的所有疑問</p>
+                </div>
+
+                <div class="space-y-6">
+                    
+                    <!-- 活動類 -->
+                    <section>
+                        <h3 class="font-bold text-lg text-rose-800 bg-rose-100 py-2 px-4 rounded-xl mb-3 flex items-center"><i class="fas fa-bullhorn mr-2"></i>活動相關</h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 開幕月期間為何時？</p><p class="text-sm text-gray-600">A: 整個 12 月都是喔！</p></div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 折上折活動是什麼意思？</p><p class="text-sm text-gray-600 text-justify">A: 開幕月只要你有優惠卷或符合任一資格折扣，且單筆消費金額滿五百以上，都可以併行使用。</p></div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 活動好多我有點混亂。</p><p class="text-sm text-gray-600">A: 可以參考右上方「本月活動」頁面資訊，有這個月活動詳述。</p></div>
+                        </div>
+                    </section>
+
+                    <!-- 預約類 -->
+                    <section>
+                        <h3 class="font-bold text-lg text-rose-800 bg-rose-100 py-2 px-4 rounded-xl mb-3 flex items-center"><i class="fas fa-calendar-alt mr-2"></i>預約相關</h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 半預約制什麼意思？你們營業24小時嗎？</p><p class="text-sm text-gray-600 text-justify">A: 希望你們提前約，但在日間時段(10~17點)可以致電詢問當天還有沒有時間段，如果有還是可以前來施作；夜間時段(18~3點)至少三天前就需要約。</p></div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 我想預約，應該怎麼做？</p><p class="text-sm text-gray-600">A: 日間時段(10~17點) LINE 都可以預約喔。</p></div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 請問如果我來不及在預約日三天前取消怎麼辦？</p><p class="text-sm text-gray-600">A: 下次預約可以先私訊，完成訂金匯款就會幫你預約。</p></div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 我未到一次，再次預約又是三天內取消，是不是訂金就被吃掉了？</p><p class="text-sm text-gray-600">A: 是的，這樣表示未到兩次，兩個時間段都已經為您安排。</p></div>
+                        </div>
+                    </section>
+                    
+                    <!-- 托育類 -->
+                    <section>
+                        <h3 class="font-bold text-lg text-rose-800 bg-rose-100 py-2 px-4 rounded-xl mb-3 flex items-center"><i class="fas fa-baby mr-2"></i>J.Y特別加購項目：臨托服務</h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 我想除毛時，預約臨時托育服務，可以嗎？有沒有什麼限制？</p><p class="text-sm text-gray-600 text-justify">A: 暫時不開放，之後僅開放夜間時段臨托，年齡限制5歲以下，且也需要看保母安排，如果可以接受請先加我們LINE，私訊「我想加購托育」，服務人員會回覆妳價格及時段。</p></div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 臨時托育服務是專業人員嗎？</p><p class="text-sm text-gray-600">A: 是，有永康區居家托育證照，加入準公托而且是相關科系。</p></div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 我加購臨時托育服務看得到小孩嗎？</p><p class="text-sm text-gray-600">A: 通常看不到，但小孩就在二樓而已，而妳在一樓施作。如果要看到可以另外事先提出。</p></div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 沒加購臨托可以帶小孩去嗎？</p><p class="text-sm text-gray-600">A: 沒辦法喔，因施作時環境需要安靜、也比較不能被動彈。</p></div>
+                        </div>
+                    </section>
+
+                    <!-- 熱蠟類 -->
+                    <section>
+                        <h3 class="font-bold text-lg text-rose-800 bg-rose-100 py-2 px-4 rounded-xl mb-3 flex items-center"><i class="fas fa-cut mr-2"></i>熱蠟除毛小知識</h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 熱蠟除毛好處？</p><p class="text-sm text-gray-600 text-justify">A: 除毛效果依個人體質約維持三~七週，並且連根拔除過程中因破壞毛囊，長期固定回除能使毛髮變細、變少，生長速度也會變慢。</p></div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 為什麼除毛完會變白？</p><p class="text-sm text-gray-600">A: 因為熱蠟附帶去除老廢角質，也有體驗客因為這樣除全身熱蠟喔！(全身熱蠟需預約整天喔)</p></div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300"><p class="text-sm font-bold text-rose-700 mb-1">Q: 會不會很燙或很痛？</p><p class="text-sm text-gray-600">A: 本店使用 italwax 義朵熱蠟，不會很燙，之於一般熱蠟減痛非常多，但依據個人毛囊狀況會有不同痛感。</p></div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300">
+                                <p class="text-sm font-bold text-rose-700 mb-1">Q: 什麼情況不能做熱蠟？</p>
+                                <p class="text-sm font-medium text-red-600">禁忌症（不可預約）：</p>
+                                <p class="text-sm text-gray-600 mb-2">曬傷｜換膚｜嚴重靜脈曲張｜性病及其他傳染性疾病｜痘痘藥物中｜12週內或35週以上之孕婦</p>
+                                <p class="text-sm font-medium text-amber-600">須醫生同意：</p>
+                                <p class="text-sm text-gray-600">糖尿病｜抗生素中｜免疫力失調｜避孕藥/荷爾蒙治療</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-300">
+                                <p class="text-sm font-bold text-rose-700 mb-1">Q: 術後需要特別做什麼保養嗎？</p>
+                                <p class="text-sm text-gray-600 text-justify">A: 除毛前後請勤勞密集保濕，除毛一週後去角質，有助於新毛髮及避免內崁毛狀況，請注意產品不能含酸、也沒有美白功能。</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- 4. 本月活動 (可編輯) -->
+            <div id="events" class="tab-content">
+                <div id="events-display">
+                    <!-- 活動內容將由 JS 載入 -->
+                </div>
+                <!-- 管理員編輯區塊 -->
+                <div id="events-edit" class="hidden mt-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h3 class="text-lg font-bold text-rose-700 mb-3">編輯本月活動</h3>
+                    <textarea id="events-textarea" class="w-full h-64 p-3 border rounded-lg focus:ring-rose-500 focus:border-rose-500" placeholder="在此輸入活動內容 (Markdown 格式)"></textarea>
+                    <button onclick="saveEvents()" class="mt-3 w-full action-btn bg-rose-500 text-white">儲存變更</button>
+                </div>
+            </div>
+
+            <!-- 5. 預約表單 -->
+            <div id="booking" class="tab-content">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-extrabold text-rose-900 drop-shadow-sm">線上預約表單</h2>
+                    <p class="text-sm text-rose-400 tracking-wider font-medium mt-1">請選擇您的項目與時段</p>
+                </div>
+
+                <form id="booking-form" class="space-y-6 bg-rose-50/80 p-6 rounded-2xl shadow-lg border border-rose-100">
+                    
+                    <!-- 1. 姓名 -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-rose-700 mb-2 flex items-center"><i class="fas fa-user mr-2"></i>預約姓名 <span class="text-red-500">*</span></label>
+                        <input type="text" id="name" required class="w-full p-3 border border-rose-200 rounded-xl focus:ring-rose-500 focus:border-rose-500 transition shadow-sm" placeholder="請輸入您的姓名">
+                    </div>
+
+                    <!-- 2. 預約項目 -->
+                    <div>
+                        <label class="block text-sm font-medium text-rose-700 mb-2 flex items-center"><i class="fas fa-cut mr-2"></i>預約項目 <span class="text-red-500">*</span></label>
+                        <div id="service-options" class="grid grid-cols-2 gap-3">
+                            <!-- 選項將由 JS 動態生成 -->
+                        </div>
+                        <input type="hidden" id="selected-service" required>
+                    </div>
+
+                    <!-- 3. 日期選擇 -->
+                    <div id="date-selection-container">
+                        <label class="block text-sm font-medium text-rose-700 mb-2 flex items-center"><i class="fas fa-calendar-day mr-2"></i>預約日期 <span class="text-red-500">*</span></label>
+                        <div class="bg-white p-4 rounded-xl shadow-inner border border-rose-100">
+                            <div class="flex justify-between items-center mb-4">
+                                <button type="button" onclick="changeMonth(-1)" class="text-rose-600 hover:text-rose-800 transition"><i class="fas fa-chevron-left"></i></button>
+                                <span id="current-month-year" class="font-bold text-lg text-rose-800"></span>
+                                <button type="button" onclick="changeMonth(1)" class="text-rose-600 hover:text-rose-800 transition"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <!-- 星期標籤 -->
+                            <div class="grid grid-cols-7 text-center text-xs font-medium text-rose-400 mb-2">
+                                <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+                            </div>
+                            <!-- 日期網格 -->
+                            <div id="calendar-grid" class="grid grid-cols-7 gap-1">
+                                <!-- 日曆格子將由 JS 填充 -->
+                            </div>
+                            <input type="hidden" id="selected-date" required>
+                        </div>
+                    </div>
+
+                    <!-- 4. 時間段選擇 -->
+                    <div>
+                        <label class="block text-sm font-medium text-rose-700 mb-2 flex items-center"><i class="fas fa-clock mr-2"></i>預約時間段 <span class="text-red-500">*</span></label>
+                        <div id="time-slot-container" class="grid grid-cols-3 gap-3">
+                            <!-- 時間段按鈕將由 JS 填充 -->
+                        </div>
+                        <input type="hidden" id="selected-time" required>
+                        <p id="time-loading-msg" class="mt-2 text-xs text-gray-500 flex items-center">
+                            <i class="fas fa-spinner fa-spin mr-1"></i> 請先選擇日期...
+                        </p>
+                    </div>
+
+                    <!-- 5. 學生身份 -->
+                    <div>
+                        <label class="block text-sm font-medium text-rose-700 mb-2 flex items-center"><i class="fas fa-graduation-cap mr-2"></i>是否為學生身份</label>
+                        <div class="flex gap-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="isStudent" value="yes" class="form-radio text-rose-600" onchange="toggleStudentTip(true)">
+                                <span class="ml-2 text-gray-700">是</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="isStudent" value="no" class="form-radio text-rose-600" checked onchange="toggleStudentTip(false)">
+                                <span class="ml-2 text-gray-700">否</span>
+                            </label>
+                        </div>
+                        <p id="student-tip" class="mt-2 text-sm text-green-600 bg-green-100 p-2 rounded-lg hidden flex items-center"><i class="fas fa-check-circle mr-2"></i>當天請幫我帶學生證喔！</p>
+                    </div>
+
+                    <!-- 6. 曾預約未到 -->
+                    <div>
+                        <label class="block text-sm font-medium text-rose-700 mb-2 flex items-center"><i class="fas fa-exclamation-triangle mr-2"></i>是否曾經預約未到</label>
+                        <div class="flex gap-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="hasMissed" value="yes" class="form-radio text-rose-600" onchange="toggleMissedTip(true)">
+                                <span class="ml-2 text-gray-700">是</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="hasMissed" value="no" class="form-radio text-rose-600" checked onchange="toggleMissedTip(false)">
+                                <span class="ml-2 text-gray-700">否</span>
+                            </label>
+                        </div>
+                        <p id="missed-tip" class="mt-2 text-sm text-red-600 bg-red-100 p-2 rounded-lg hidden flex items-center"><i class="fas fa-money-bill-alt mr-2"></i>需要聯絡 LINE 官方匯款訂金喔！</p>
+                    </div>
+                    
+                    <button type="submit" class="w-full action-btn bg-rose-500 text-white text-lg mt-6">送出預約表單</button>
+                    <p id="booking-msg" class="text-center text-sm mt-3"></p>
+                </form>
+            </div>
+
+            <!-- 6. 管理員專用：預約時刻表 -->
+            <div id="schedule" class="tab-content">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-extrabold text-rose-900 drop-shadow-sm">預約時刻表</h2>
+                    <p class="text-sm text-rose-400 tracking-wider font-medium mt-1">即時預約數據 (僅管理員可見)</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-lg border border-rose-100">
+                    <div id="schedule-loading" class="text-center text-gray-500 py-10">
+                        <i class="fas fa-spinner fa-spin text-xl mr-2"></i> 正在載入預約資料...
+                    </div>
+                    <div id="schedule-list" class="space-y-4">
+                        <!-- 預約列表將由 JS 載入 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 版權與最終解釋權 -->
+            <footer class="mt-10 text-center text-xs text-gray-400 pb-4 safe-bottom">
+                <p>&copy; 2024 J.Y Beauty Studio 九翊美學. All Rights Reserved.</p>
+                <p class="mt-1 text-rose-400">本店擁有店內規則及活動之最終解釋權</p>
+            </footer>
+
+        </main>
+    </div>
+
+    <!-- 管理員登入 Modal -->
+    <div id="login-modal" class="modal fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center invisible opacity-0">
+        <div class="modal-content bg-white p-6 rounded-xl shadow-2xl w-full max-w-xs mx-4">
+            <h3 class="text-xl font-bold text-rose-700 mb-4 text-center">管理員登入</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="admin-username" class="block text-sm font-medium text-gray-700 mb-1">帳號</label>
+                    <input type="text" id="admin-username" class="w-full p-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500" placeholder="a5527871028">
+                </div>
+                <div>
+                    <label for="admin-password" class="block text-sm font-medium text-gray-700 mb-1">密碼</label>
+                    <input type="password" id="admin-password" class="w-full p-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500" placeholder="apple5512">
+                </div>
+                <p id="login-error-msg" class="text-red-500 text-sm hidden"></p>
+                <p id="login-attempt-count" class="text-gray-500 text-xs text-center">剩餘嘗試次數：3</p>
+            </div>
+            <div class="flex justify-between gap-3 mt-6">
+                <button onclick="closeLoginModal()" class="flex-1 p-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">取消</button>
+                <button onclick="handleAdminLogin()" class="flex-1 p-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition">登入</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Firebase 腳本 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // 設定日誌級別，方便調試
+        setLogLevel('debug');
+
+        // --- 全域變數/Firebase 設定 ---
+        // 您的 Firebase 配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyCUA8l-vWhPEmhJRFvvsVw-D9SswS02Cws",
+            authDomain: "jy-beauty-booking.firebaseapp.com",
+            projectId: "jy-beauty-booking",
+            storageBucket: "jy-beauty-booking.firebasestorage.app",
+            messagingSenderId: "1002086733528",
+            appId: "1:1002086733528:web:be630f3eddc7b91acea9ad",
+            measurementId: "G-KTT19KK0NY"
+        };
+        
+        // Canvas 環境變數
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app;
+        let auth;
+        let db;
+        let userId = null;
+        let isAdmin = false;
+        let loginAttempts = 0;
+        const MAX_LOGIN_ATTEMPTS = 3;
+        
+        // 管理員帳密（用於本地比對）
+        const ADMIN_EMAIL = "a5527871028@jystudio.com"; // 用戶名轉為Email格式
+        const ADMIN_PASSWORD = "apple5512";
+        const ADMIN_USERNAME_RAW = "a5527871028";
+        const ADMIN_PASSWORD_RAW = "apple5512";
+
+        // 預約時間段
+        const TIME_SLOTS = ["10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00", "24:00"];
+        
+        // 價格表項目 (用於預約表單)
+        const PRICE_ITEMS = {
+            private: {
+                title: "私密處",
+                items: ["比基尼除毛", "巴西式全除"]
+            },
+            hand: {
+                title: "手部",
+                items: ["腋下", "上/下手臂", "全手臂", "手指"]
+            },
+            leg: {
+                title: "腿部",
+                items: ["小腿", "大腿", "全腿", "膝蓋"]
+            },
+            other: {
+                title: "其他部位",
+                items: ["肚子", "上/下背", "全背"]
+            }
+        };
+
+        // --- 核心 Firestore 路徑生成 ---
+        const getPrivateDocRef = (collectionName, documentId) => doc(db, `artifacts/${appId}/users/${userId}/${collectionName}`, documentId);
+        const getPrivateCollectionRef = (collectionName) => collection(db, `artifacts/${appId}/users/${userId}/${collectionName}`);
+        const getPublicCollectionRef = (collectionName) => collection(db, `artifacts/${appId}/public/data/${collectionName}`);
+        
+        // 文件 ID 定義
+        const RULES_DOC_ID = 'rulesContent';
+        const EVENTS_DOC_ID = 'eventsContent';
+
+        // --- 初始化與認證邏輯 ---
+        window.onload = async () => {
+            // 1. 初始化 Firebase App
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            // 2. 設置 Auth 狀態監聽
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    console.log("Firebase 認證成功，UID:", userId);
+
+                    // 檢查是否為管理員（通過 Email 比對或自定義聲明）
+                    if (user.email === ADMIN_EMAIL) {
+                        isAdmin = true;
+                        console.log("用戶是管理員。");
+                    } else {
+                        isAdmin = false;
+                    }
+                    
+                    // 認證完成後，載入所有資料並啟用監聽
+                    await loadAndListenData();
+                    updateAdminUI();
+                } else {
+                    // 如果沒有用戶，嘗試匿名登入
+                    try {
+                        // 使用 Canvas token 登入
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            // 否則匿名登入
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error("認證失敗:", error);
+                    }
+                }
+            });
+            
+            // 3. 預先設置表單項目
+            setupBookingForm();
+        };
+        
+        /**
+         * 載入並監聽所有 Firestore 資料
+         */
+        async function loadAndListenData() {
+            // 預約須知 & 本月活動 (使用 onSnapshot 實現即時性)
+            onSnapshot(getPublicCollectionRef('content'), (snapshot) => {
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (doc.id === RULES_DOC_ID) {
+                        renderContent('rules-display', data.text);
+                        document.getElementById('rules-textarea').value = data.text;
+                    } else if (doc.id === EVENTS_DOC_ID) {
+                        renderContent('events-display', data.text);
+                        document.getElementById('events-textarea').value = data.text;
+                    }
+                });
+            }, (error) => {
+                console.error("監聽內容資料失敗:", error);
+                // 載入預設內容以防萬一
+                renderDefaultContent();
+            });
+
+            // 預約時刻表 (僅管理員需要)
+            if (isAdmin) {
+                // 僅在管理員登入時監聽預約資料
+                onSnapshot(getPublicCollectionRef('bookings'), (snapshot) => {
+                    renderSchedule(snapshot.docs);
+                }, (error) => {
+                    console.error("監聽預約資料失敗:", error);
+                    document.getElementById('schedule-loading').textContent = '載入預約資料失敗。';
+                });
+            }
+            
+            // 首次渲染日曆
+            renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+            
+            // 載入當天時間段狀態
+            if (document.getElementById('selected-date').value) {
+                await updateTimeSlots();
+            }
+        }
+        
+        /**
+         * 將純文本或 Markdown 渲染到 DOM
+         * @param {string} elementId - 要渲染到的元素 ID
+         * @param {string} contentText - 內容文本
+         */
+        function renderContent(elementId, contentText) {
+            const container = document.getElementById(elementId);
+            if (!container) return;
+            
+            if (!contentText) {
+                container.innerHTML = `<div class="p-4 bg-gray-100 rounded-xl text-center text-gray-500">內容載入中或管理員尚未設定。</div>`;
+                return;
+            }
+
+            // 簡易的 Markdown 轉 HTML (只處理換行、標題和列表)
+            let html = contentText;
+            
+            // 1. 列表轉換 (處理 * 或 -)
+            html = html.replace(/^(?:[\*-]|\d\.)\s+(.+)$/gm, (match, p1) => {
+                // 如果是數字開頭，使用 <ol>
+                if (match.match(/^\d\./)) return `<li>${p1}</li>`;
+                // 否則使用 <ul>
+                return `<li>${p1}</li>`;
+            });
+            
+            // 2. 段落處理
+            html = html.split('\n\n').map(p => {
+                if (p.startsWith('<li>')) return `<ul>${p.replace(/<\/li>\n<li>/g, '</li><li>')}</ul>`;
+                return `<p>${p}</p>`;
+            }).join('');
+            
+            // 3. 替換雙換行符為段落，單換行符為 <br>
+            html = html.replace(/\n\s*\n/g, '</p><p>');
+            html = html.replace(/\n/g, '<br>');
+            
+            // 4. 添加樣式容器
+            container.innerHTML = `<div class="content-box bg-white p-5 rounded-2xl shadow-xl border border-rose-100 space-y-4 text-sm text-gray-700">${html}</div>`;
+        }
+        
+        /**
+         * 載入預設內容（首次運行或網路失敗時）
+         */
+        function renderDefaultContent() {
+            // 預約須知預設內容
+            const defaultRules = `
+店內規則
+1. 限生理女、男賓止步
+2. 日間半預約制
+3. 日間時段：10～17點；夜間時段：18～3點
+4. 預約日間不用訂金，但有未到紀錄，下次預約須先匯款訂金（為預約項目總價1/2之金額）
+5. 預約夜間皆需先付款訂金（為預約項目總價1/2之金額）
+6. 遲到15分鐘以上，未先訊息告知即視為未到，並取消預約
+7. 取消預約至少提前三天，如有匯款訂金方可全額退還
+8. 因合作空間，施作空間為布簾隔斷隔音，雖除毛師人都會在，但介意勿約
+9. 美容空間無法攜帶食物及寵物
+
+施作前注意
+1. 施作日前請停用酸類產品、停止去角質至少一週，避免肌膚過敏或刺激
+2. 毛髮長度需至少 0.5 至 1 公分，請勿自行修剪，以免影響除毛效果
+3. 避開生理期前 5 天到後 3 天
+4. 若有規劃出遊，建議提前3～5天安排除毛時間，讓肌膚有足夠的時間恢復，避免在出遊前一兩天才除毛
+5. 除毛前後請勤勞密集保濕，除毛時有脫皮、泛紅、紅點屬正常現象，請注意產品不能含酸、也沒有美白功能
+            `.trim();
+            renderContent('rules-display', defaultRules);
+            document.getElementById('rules-textarea').value = defaultRules;
+            
+            // 本月活動預設內容
+            const defaultEvents = `
+## 🎊 開幕月限定活動 🎊
+
+### <i class="fas fa-calendar-check"></i> 優惠期間：
+
+* 整個月都享有開幕超值價！
+
+### <i class="fas fa-gifts"></i> 多重優惠：
+
+* 學生價活動過後不會消失，憑證件享最低價！
+* 分享 LINE 官方給好友，一起加好友兩人都能拿到優惠劵，一人最高可拿五張，每次可使用 1 張。
+* 追蹤 IG、加 LINE 官方、Google 評論五顆星並留言，經定額折扣完，消費總額再打九折！
+            `.trim();
+            renderContent('events-display', defaultEvents);
+            document.getElementById('events-textarea').value = defaultEvents;
+        }
+
+        // --- 管理員 UI 邏輯 ---
+        function updateAdminUI() {
+            const adminTab = document.getElementById('admin-tab');
+            const rulesEdit = document.getElementById('rules-edit');
+            const eventsEdit = document.getElementById('events-edit');
+            const adminLoginBtn = document.getElementById('admin-login-btn');
+            const adminLogoutBtn = document.getElementById('admin-logout-btn');
+            
+            if (isAdmin) {
+                adminTab.classList.remove('hidden');
+                adminLoginBtn.classList.add('hidden');
+                adminLogoutBtn.classList.remove('hidden');
+                // 切換到管理員分頁時顯示編輯區
+                if (document.querySelector('.tab-btn.active-tab').dataset.tab === 'rules') {
+                    rulesEdit.classList.remove('hidden');
+                }
+                if (document.querySelector('.tab-btn.active-tab').dataset.tab === 'events') {
+                    eventsEdit.classList.remove('hidden');
+                }
+            } else {
+                adminTab.classList.add('hidden');
+                rulesEdit.classList.add('hidden');
+                eventsEdit.classList.add('hidden');
+                adminLoginBtn.classList.remove('hidden');
+                adminLogoutBtn.classList.add('hidden');
+                // 如果當前在管理員分頁，切回預約須知
+                if (document.querySelector('.tab-btn.active-tab').dataset.tab === 'schedule') {
+                    switchTab('rules', document.querySelector('[data-tab="rules"]'));
+                }
+            }
+        }
+        
+        /**
+         * 登出管理員
+         */
+        async function logoutAdmin() {
+            try {
+                // 確保登出的是管理員帳號，然後重新以匿名用戶身份登入
+                await signOut(auth);
+                isAdmin = false;
+                updateAdminUI();
+                
+                // 重新匿名登入以保持 Firestore 連線
+                const user = await signInAnonymously(auth);
+                userId = user.user.uid;
+                
+                // 重置登入嘗試次數
+                loginAttempts = 0;
+                document.getElementById('login-attempt-count').textContent = `剩餘嘗試次數：${MAX_LOGIN_ATTEMPTS}`;
+                
+                showCustomMessage('已成功登出管理員帳號！', 'green');
+            } catch (error) {
+                console.error("登出失敗:", error);
+                showCustomMessage('登出失敗，請重試。', 'red');
+            }
+        }
+
+        // --- 管理員登入 Modal 邏輯 ---
+        function openLoginModal() {
+            if (isAdmin) {
+                showCustomMessage('您已是管理員身份，無需再次登入！', 'orange');
+                return;
+            }
+            const modal = document.getElementById('login-modal');
+            modal.classList.add('open');
+            modal.classList.remove('invisible', 'opacity-0');
+        }
+
+        function closeLoginModal() {
+            const modal = document.getElementById('login-modal');
+            modal.classList.remove('open');
+            modal.classList.add('invisible', 'opacity-0');
+            // 清除錯誤訊息
+            document.getElementById('login-error-msg').textContent = '';
+            document.getElementById('login-error-msg').classList.add('hidden');
+            // 重置輸入框
+            document.getElementById('admin-username').value = '';
+            document.getElementById('admin-password').value = '';
+            
+            // 如果超過三次，則保持鎖定
+            if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+                showCustomMessage('登入嘗試失敗過多，請聯繫管理員。', 'red');
+            }
+        }
+
+        async function handleAdminLogin() {
+            if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+                showErrorMessage('login-error-msg', '登入嘗試失敗過多，請聯繫管理員。');
+                return;
+            }
+            
+            const username = document.getElementById('admin-username').value.trim();
+            const password = document.getElementById('admin-password').value.trim();
+            const errorMsgEl = document.getElementById('login-error-msg');
+            const attemptCountEl = document.getElementById('login-attempt-count');
+            
+            errorMsgEl.classList.add('hidden');
+            
+            // 1. 本地帳密比對（第一道防線）
+            if (username !== ADMIN_USERNAME_RAW || password !== ADMIN_PASSWORD_RAW) {
+                loginAttempts++;
+                attemptCountEl.textContent = `剩餘嘗試次數：${MAX_LOGIN_ATTEMPTS - loginAttempts}`;
+                
+                if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+                    showErrorMessage('login-error-msg', '登入嘗試失敗過多，請確定帳密或與管理員聯繫');
+                } else {
+                    showErrorMessage('login-error-msg', '帳號或密碼錯誤，請重試。');
+                }
+                return;
+            }
+
+            // 2. Firebase Auth 登入（第二道防線，實際驗證）
+            try {
+                // 為了使用 Firebase Auth，我們需要使用 Email 格式
+                const adminEmail = `${username}@jystudio.com`;
+                await setPersistence(auth, browserSessionPersistence);
+                await signInWithEmailAndPassword(auth, adminEmail, password);
+                
+                // 登入成功
+                isAdmin = true;
+                loginAttempts = 0; // 重置嘗試次數
+                closeLoginModal();
+                updateAdminUI();
+                switchTab('schedule', document.getElementById('admin-tab')); // 切換到管理員專用頁面
+                showCustomMessage('登入成功！已切換至管理員模式。', 'green');
+            
+            } catch (firebaseError) {
+                console.error("Firebase 登入失敗:", firebaseError);
+                loginAttempts++;
+                attemptCountEl.textContent = `剩餘嘗試次數：${MAX_LOGIN_ATTEMPTS - loginAttempts}`;
+                
+                if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+                    showErrorMessage('login-error-msg', '登入嘗試失敗過多，請確定帳密或與管理員聯繫');
+                } else {
+                    showErrorMessage('login-error-msg', 'Firebase 登入失敗，請確定帳密或與管理員聯繫。');
+                }
+            }
+        }
+        
+        /**
+         * 顯示錯誤訊息
+         * @param {string} elementId - 錯誤訊息元素 ID
+         * @param {string} message - 訊息內容
+         */
+        function showErrorMessage(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 5000);
+        }
+
+        // --- 內容編輯與儲存邏輯 ---
+        
+        /**
+         * 儲存預約須知
+         */
+        async function saveRules() {
+            if (!isAdmin) return showCustomMessage('您沒有權限進行此操作。', 'red');
+            const content = document.getElementById('rules-textarea').value;
+            const docRef = doc(getPublicCollectionRef('content'), RULES_DOC_ID);
+            
+            try {
+                await setDoc(docRef, { text: content, updatedBy: userId, timestamp: serverTimestamp() });
+                showCustomMessage('預約須知已成功更新！', 'green');
+            } catch (error) {
+                console.error("儲存預約須知失敗:", error);
+                showCustomMessage('儲存失敗，請檢查網路連線。', 'red');
+            }
+        }
+
+        /**
+         * 儲存本月活動
+         */
+        async function saveEvents() {
+            if (!isAdmin) return showCustomMessage('您沒有權限進行此操作。', 'red');
+            const content = document.getElementById('events-textarea').value;
+            const docRef = doc(getPublicCollectionRef('content'), EVENTS_DOC_ID);
+            
+            try {
+                await setDoc(docRef, { text: content, updatedBy: userId, timestamp: serverTimestamp() });
+                showCustomMessage('本月活動已成功更新！', 'green');
+            } catch (error) {
+                console.error("儲存本月活動失敗:", error);
+                showCustomMessage('儲存失敗，請檢查網路連線。', 'red');
+            }
+        }
+
+        // --- 分頁切換邏輯 ---
+        window.switchTab = function (tabName, button) {
+            // 移除所有 active 狀態
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active-tab', 'text-rose-700', 'border-rose-500');
+                btn.classList.add('border-transparent');
+            });
+
+            // 設置新的 active 狀態
+            document.getElementById(tabName).classList.add('active');
+            button.classList.add('active-tab', 'text-rose-700', 'border-rose-500');
+            button.classList.remove('border-transparent');
+
+            // 處理管理員編輯區塊的顯示/隱藏
+            const rulesEdit = document.getElementById('rules-edit');
+            const eventsEdit = document.getElementById('events-edit');
+            
+            rulesEdit.classList.add('hidden');
+            eventsEdit.classList.add('hidden');
+
+            if (isAdmin) {
+                if (tabName === 'rules') {
+                    rulesEdit.classList.remove('hidden');
+                } else if (tabName === 'events') {
+                    eventsEdit.classList.remove('hidden');
+                }
+            }
+            
+            // 確保非管理員無法看到時刻表
+            if (tabName === 'schedule' && !isAdmin) {
+                switchTab('rules', document.querySelector('[data-tab="rules"]'));
+                showCustomMessage('您沒有權限查看預約時刻表。', 'red');
+            }
+        }
+
+        // --- 預約表單設定與互動邏輯 ---
+        
+        /**
+         * 設置預約表單的服務項目選項
+         */
+        function setupBookingForm() {
+            const container = document.getElementById('service-options');
+            container.innerHTML = '';
+            
+            let allItems = [];
+            for (const key in PRICE_ITEMS) {
+                allItems = allItems.concat(PRICE_ITEMS[key].items);
+            }
+            
+            allItems.forEach(item => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'p-3 bg-white border border-rose-200 rounded-xl text-sm text-gray-700 hover:bg-rose-100 transition shadow-sm';
+                button.textContent = item;
+                button.dataset.service = item;
+                
+                button.onclick = () => {
+                    // 移除所有按鈕的選中狀態
+                    document.querySelectorAll('#service-options button').forEach(btn => {
+                        btn.classList.remove('bg-rose-500', 'text-white', 'shadow-md');
+                        btn.classList.add('bg-white', 'text-gray-700');
+                    });
+                    // 設置當前按鈕的選中狀態
+                    button.classList.add('bg-rose-500', 'text-white', 'shadow-md');
+                    button.classList.remove('bg-white', 'text-gray-700');
+                    
+                    document.getElementById('selected-service').value = item;
+                };
+                container.appendChild(button);
+            });
+        }
+        
+        /**
+         * 顯示/隱藏學生證提示
+         */
+        window.toggleStudentTip = function (show) {
+            document.getElementById('student-tip').classList.toggle('hidden', !show);
+        }
+
+        /**
+         * 顯示/隱藏訂金提示
+         */
+        window.toggleMissedTip = function (show) {
+            document.getElementById('missed-tip').classList.toggle('hidden', !show);
+        }
+
+        /**
+         * 提交預約表單
+         */
+        document.getElementById('booking-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const service = document.getElementById('selected-service').value;
+            const date = document.getElementById('selected-date').value;
+            const time = document.getElementById('selected-time').value;
+            const isStudent = document.querySelector('input[name="isStudent"]:checked').value === 'yes';
+            const hasMissed = document.querySelector('input[name="hasMissed"]:checked').value === 'yes';
+            
+            const msgEl = document.getElementById('booking-msg');
+            msgEl.textContent = '正在送出預約...';
+            msgEl.className = 'text-center text-sm mt-3 text-rose-500';
+            
+            if (!name || !service || !date || !time) {
+                msgEl.textContent = '請填寫所有必填欄位！';
+                msgEl.className = 'text-center text-sm mt-3 text-red-500';
+                return;
+            }
+            
+            try {
+                // 檢查時段是否已被預約
+                const bookingsRef = getPublicCollectionRef('bookings');
+                const q = query(bookingsRef, where("date", "==", date), where("time", "==", time));
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    msgEl.textContent = '抱歉，此時段剛被預約走了，請重新選擇。';
+                    msgEl.className = 'text-center text-sm mt-3 text-red-500';
+                    // 強制更新時間段狀態
+                    await updateTimeSlots();
+                    return;
+                }
+
+                const bookingData = {
+                    name: name,
+                    service: service,
+                    date: date,
+                    time: time,
+                    isStudent: isStudent,
+                    hasMissed: hasMissed,
+                    status: 'Pending', // 待確認
+                    userId: userId,
+                    createdAt: serverTimestamp()
+                };
+                
+                await addDoc(bookingsRef, bookingData);
+                
+                msgEl.textContent = `預約成功！項目：${service}，日期：${date}，時間：${time}。`;
+                msgEl.className = 'text-center text-sm mt-3 text-green-600 font-bold';
+                this.reset(); // 重置表單
+                document.getElementById('selected-service').value = '';
+                document.getElementById('selected-date').value = '';
+                document.getElementById('selected-time').value = '';
+                toggleStudentTip(false);
+                toggleMissedTip(false);
+                document.querySelectorAll('#service-options button').forEach(btn => {
+                    btn.classList.remove('bg-rose-500', 'text-white', 'shadow-md');
+                    btn.classList.add('bg-white', 'text-gray-700');
+                });
+                // 重置日曆和時間段
+                currentDate = new Date();
+                renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                document.getElementById('time-slot-container').innerHTML = '';
+                document.getElementById('time-loading-msg').textContent = '請先選擇日期...';
+
+            } catch (error) {
+                console.error("送出預約失敗:", error);
+                msgEl.textContent = '預約送出失敗，請聯繫 LINE 官方。';
+                msgEl.className = 'text-center text-sm mt-3 text-red-500';
+            }
+        });
+
+        // --- 日曆與預約時段邏輯 ---
+        
+        let currentDate = new Date();
+        let bookedSlotsCache = {}; // 緩存預約資料: {'YYYY-MM-DD': ['HH:MM', ...]}
+
+        /**
+         * 改變日曆月份
+         * @param {number} delta - 1 為下個月, -1 為上個月
+         */
+        window.changeMonth = function (delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        }
+
+        /**
+         * 渲染日曆
+         * @param {number} year - 年
+         * @param {number} month - 月 (0-11)
+         */
+        function renderCalendar(year, month) {
+            const grid = document.getElementById('calendar-grid');
+            const monthYearDisplay = document.getElementById('current-month-year');
+            
+            grid.innerHTML = '';
+            monthYearDisplay.textContent = `${year} 年 ${month + 1} 月`;
+
+            const firstDayOfMonth = new Date(year, month, 1);
+            const lastDayOfMonth = new Date(year, month + 1, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // 調整到星期日開頭的偏移量
+            const startDayOffset = firstDayOfMonth.getDay(); 
+            
+            // 1. 填充空白日期
+            for (let i = 0; i < startDayOffset; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'calendar-day';
+                grid.appendChild(emptyCell);
+            }
+
+            // 2. 填充當月日期
+            for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
+                const date = new Date(year, month, day);
+                const dateString = date.toISOString().split('T')[0];
+                const isPast = date < today;
+                
+                const dayEl = document.createElement('div');
+                dayEl.textContent = day;
+                dayEl.dataset.date = dateString;
+                dayEl.className = 'calendar-day text-sm';
+
+                // 檢查是否已全部預約 (目前簡化為不檢查，等點擊後再檢查時段)
+                // 檢查日期是否為週末（星期六/日）
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                
+                if (isPast) {
+                    dayEl.classList.add('disabled');
+                } else {
+                    dayEl.classList.add('current-month');
+                    if (dateString === document.getElementById('selected-date').value) {
+                        dayEl.classList.add('selected');
+                    }
+                    dayEl.onclick = () => selectDate(dateString, dayEl);
+                }
+
+                grid.appendChild(dayEl);
+            }
+        }
+        
+        /**
+         * 選擇日期
+         * @param {string} dateString - YYYY-MM-DD 格式的日期
+         * @param {HTMLElement} element - 被點擊的日期元素
+         */
+        window.selectDate = async function (dateString, element) {
+            // 清除舊的選擇狀態
+            document.querySelectorAll('#calendar-grid .selected').forEach(el => el.classList.remove('selected'));
+            
+            // 設置新的選擇狀態
+            element.classList.add('selected');
+            document.getElementById('selected-date').value = dateString;
+            document.getElementById('selected-time').value = ''; // 清除已選擇的時間段
+
+            // 載入該日期的可用時段
+            await updateTimeSlots();
+        }
+
+        /**
+         * 獲取指定日期和時段的預約狀態
+         * @param {string} date - YYYY-MM-DD 格式
+         * @returns {Array<string>} - 已被預約的時段 ['HH:MM', ...]
+         */
+        async function fetchBookedSlots(date) {
+            if (bookedSlotsCache[date]) {
+                return bookedSlotsCache[date];
+            }
+            
+            const bookingsRef = getPublicCollectionRef('bookings');
+            const q = query(bookingsRef, where("date", "==", date));
+            
+            try {
+                const snapshot = await getDocs(q);
+                const bookedTimes = snapshot.docs.map(doc => doc.data().time);
+                bookedSlotsCache[date] = bookedTimes;
+                return bookedTimes;
+            } catch (error) {
+                console.error("獲取預約時段失敗:", error);
+                showCustomMessage('獲取預約時段失敗。', 'red');
+                return [];
+            }
+        }
+
+        /**
+         * 根據選擇的日期更新時間段按鈕狀態
+         */
+        async function updateTimeSlots() {
+            const date = document.getElementById('selected-date').value;
+            const container = document.getElementById('time-slot-container');
+            const loadingMsg = document.getElementById('time-loading-msg');
+            
+            container.innerHTML = '';
+            loadingMsg.classList.remove('hidden');
+            loadingMsg.textContent = '正在檢查時段空檔...';
+            
+            if (!date) {
+                loadingMsg.textContent = '請先選擇日期...';
+                return;
+            }
+
+            const bookedTimes = await fetchBookedSlots(date);
+            let fullyBooked = true;
+
+            TIME_SLOTS.forEach(time => {
+                const isBooked = bookedTimes.includes(time);
+                const timeEl = document.createElement('button');
+                timeEl.type = 'button';
+                timeEl.textContent = time;
+                timeEl.className = 'time-slot';
+                timeEl.dataset.time = time;
+                
+                if (isBooked) {
+                    timeEl.classList.add('booked');
+                    timeEl.disabled = true;
+                } else {
+                    timeEl.classList.add('available');
+                    timeEl.onclick = () => selectTimeSlot(time, timeEl);
+                    fullyBooked = false;
+                }
+                container.appendChild(timeEl);
+            });
+            
+            loadingMsg.classList.add('hidden');
+            
+            if (fullyBooked && TIME_SLOTS.length > 0) {
+                showCustomMessage('該日期所有時段皆已被預約，請選擇其他日期。', 'orange');
+            }
+        }
+
+        /**
+         * 選擇預約時段
+         * @param {string} time - HH:MM 格式的時間
+         * @param {HTMLElement} element - 被點擊的時段元素
+         */
+        window.selectTimeSlot = function (time, element) {
+            // 清除舊的選擇狀態
+            document.querySelectorAll('#time-slot-container .time-slot.selected').forEach(el => {
+                el.classList.remove('selected');
+                el.classList.add('available');
+            });
+
+            // 設置新的選擇狀態
+            element.classList.add('selected');
+            element.classList.remove('available');
+            
+            document.getElementById('selected-time').value = time;
+        }
+
+        // --- 管理員時刻表渲染邏輯 ---
+        
+        /**
+         * 渲染管理員時刻表
+         * @param {Array<DocumentSnapshot>} docs - 預約文件列表
+         */
+        function renderSchedule(docs) {
+            const listEl = document.getElementById('schedule-list');
+            const loadingEl = document.getElementById('schedule-loading');
+            
+            loadingEl.classList.add('hidden');
+            listEl.innerHTML = '';
+            
+            if (docs.length === 0) {
+                listEl.innerHTML = `<p class="text-center text-gray-500 py-10">目前沒有任何預約項目。</p>`;
+                return;
+            }
+            
+            // 1. 整理資料：按日期分組並排序
+            const bookingsByDate = docs.reduce((acc, doc) => {
+                const data = doc.data();
+                const date = data.date;
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(data);
+                return acc;
+            }, {});
+            
+            const sortedDates = Object.keys(bookingsByDate).sort();
+
+            // 2. 渲染每個日期
+            sortedDates.forEach(date => {
+                const dateGroup = bookingsByDate[date].sort((a, b) => a.time.localeCompare(b.time)); // 按時間排序
+                
+                const dateSection = document.createElement('div');
+                dateSection.className = 'border-b border-rose-200 pb-3 mb-4';
+                
+                dateSection.innerHTML = `
+                    <h4 class="font-bold text-lg text-rose-800 bg-rose-50 p-2 rounded-lg mb-3 flex items-center">
+                        <i class="fas fa-calendar-day mr-2"></i> ${date}
+                    </h4>
+                    <div class="space-y-3">
+                        ${dateGroup.map(booking => `
+                            <div class="bg-white p-4 rounded-xl shadow-md border-l-4 ${booking.status === 'Pending' ? 'border-amber-400' : 'border-green-500'}">
+                                <p class="font-bold text-base text-gray-800 flex justify-between items-center">
+                                    <span><i class="fas fa-clock mr-1 text-rose-400"></i> ${booking.time}</span>
+                                    <span class="text-xs text-amber-600">${booking.status === 'Pending' ? '待確認' : '已確認'}</span>
+                                </p>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    <i class="fas fa-user mr-1 text-gray-400"></i> 客戶：${booking.name}
+                                </p>
+                                <p class="text-sm text-gray-600">
+                                    <i class="fas fa-hand-scissors mr-1 text-gray-400"></i> 項目：${booking.service}
+                                </p>
+                                <p class="text-xs text-gray-500 mt-2 space-x-3">
+                                    <span class="${booking.isStudent ? 'text-green-600 font-medium' : 'text-gray-400'}"><i class="fas fa-graduation-cap"></i> 學生: ${booking.isStudent ? '是' : '否'}</span>
+                                    <span class="${booking.hasMissed ? 'text-red-600 font-medium' : 'text-gray-400'}"><i class="fas fa-exclamation-circle"></i> 未到: ${booking.hasMissed ? '是' : '否'}</span>
+                                </p>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                listEl.appendChild(dateSection);
+            });
+            
+            // 同步更新日曆緩存
+            updateBookedCache(docs);
+        }
+        
+        /**
+         * 更新預約時段緩存
+         * @param {Array<DocumentSnapshot>} docs - 預約文件列表
+         */
+        function updateBookedCache(docs) {
+            bookedSlotsCache = {}; // 清空緩存
+            docs.forEach(doc => {
+                const data = doc.data();
+                const date = data.date;
+                const time = data.time;
+                if (!bookedSlotsCache[date]) {
+                    bookedSlotsCache[date] = [];
+                }
+                bookedSlotsCache[date].push(time);
+            });
+            // 如果用戶在預約表單頁面，則強制刷新時間段
+            if (document.getElementById('booking').classList.contains('active')) {
+                updateTimeSlots();
+            }
+        }
+
+        // --- 客製化訊息/提示框（取代 Alert） ---
+        
+        /**
+         * 顯示客製化訊息
+         * @param {string} message - 訊息內容
+         * @param {string} type - 'green', 'red', 'orange'
+         */
+        function showCustomMessage(message, type = 'gray') {
+            let bgColor = 'bg-gray-500';
+            let icon = 'fas fa-info-circle';
+            
+            if (type === 'green') {
+                bgColor = 'bg-green-500';
+                icon = 'fas fa-check-circle';
+            } else if (type === 'red') {
+                bgColor = 'bg-red-500';
+                icon = 'fas fa-times-circle';
+            } else if (type === 'orange') {
+                bgColor = 'bg-orange-500';
+                icon = 'fas fa-exclamation-triangle';
+            }
+            
+            const existing = document.getElementById('custom-message-box');
+            if (existing) existing.remove();
+            
+            const messageBox = document.createElement('div');
+            messageBox.id = 'custom-message-box';
+            messageBox.className = `fixed top-0 left-1/2 transform -translate-x-1/2 mt-4 p-3 rounded-lg shadow-xl text-white font-medium text-sm z-[101] flex items-center transition-all duration-300 opacity-0 ${bgColor}`;
+            messageBox.innerHTML = `<i class="${icon} mr-2"></i> ${message}`;
+            
+            document.body.appendChild(messageBox);
+
+            // 顯示動畫
+            setTimeout(() => {
+                messageBox.style.opacity = '1';
+                messageBox.style.top = '10px';
+            }, 50);
+
+            // 自動消失
+            setTimeout(() => {
+                messageBox.style.opacity = '0';
+                messageBox.style.top = '-50px';
+                setTimeout(() => messageBox.remove(), 300);
+            }, 4000);
+        }
+
+        // --- Firebase Auth Setup for Admin (Helper for first run) ---
+        // 首次運行時，需要建立一個 Admin 帳號，但由於這是 HTML 檔，我們不能直接呼叫 create，
+        // 必須假設管理員已在 Firebase Console 建立好帳號 (a5527871028@jystudio.com / apple5512)。
+        // 為了讓應用程式首次運行時不會報錯，我們在登入邏輯中進行本地比對。
+        
+        // 為了讓 Canvas 環境可以運行，我們需要將需要的函數暴露給 Window
+        window.changeMonth = changeMonth;
+        window.selectDate = selectDate;
+        window.selectTimeSlot = selectTimeSlot;
+        window.switchTab = switchTab;
+        window.toggleStudentTip = toggleStudentTip;
+        window.toggleMissedTip = toggleMissedTip;
+        window.openLoginModal = openLoginModal;
+        window.closeLoginModal = closeLoginModal;
+        window.handleAdminLogin = handleAdminLogin;
+        window.logoutAdmin = logoutAdmin;
+        window.saveRules = saveRules;
+        window.saveEvents = saveEvents;
+
+    </script>
+</body>
+</html>
