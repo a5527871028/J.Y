@@ -546,9 +546,9 @@
     <!-- Firebase 腳本 -->
     <script type="module">
         // 載入 Firebase 模組
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, setDoc, query, where, getDocs, updateDoc, deleteDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "firebase/app"; 
+        import { getAnalytics } from "firebase/analytics";
+        import { } from 'https://www.gstatic.com/firebasejs/12.6.0/jy-beauty-booking.js'
 
         // --- Firebase 配置與變數 ---
         // 使用者提供的 Firebase Config
@@ -561,9 +561,8 @@
             appId: "1:1002086733528:web:be630f3eddc7b91acea9ad",
             measurementId: "G-KTT19KK0NY"
         };
-        const firebaseConfig = userFirebaseConfig; // 使用用戶提供的配置
-        const internalAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
 
         // 管理員資訊 (硬編碼)
         const ADMIN_USER = 'a5527871028';
@@ -1161,3 +1160,4 @@
     </script>
 </body>
 </html>
+
